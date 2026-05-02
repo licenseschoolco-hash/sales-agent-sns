@@ -10,8 +10,8 @@ export default async function Reports() {
     const sent = await prisma.outreachLog.count({ where: { productId: product.id, status: 'sent' } });
     const positiveReplies = await prisma.reply.count({ 
       where: { 
-        outreachLog: { productId: product.id },
-        replyType: 'positive'
+        productId: product.id,
+        replyType: 'interested'
       } 
     });
     const appointments = await prisma.appointment.count({ where: { productId: product.id } });

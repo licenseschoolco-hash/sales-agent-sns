@@ -40,6 +40,7 @@ model Product {
   dmDrafts       DmDraft[]
   outreachLogs   OutreachLog[]
   appointments   Appointment[]
+  replies        Reply[]
 
   @@map("products")
 }
@@ -142,6 +143,7 @@ model TargetCompany {
   appointments Appointment[]
   leadScores   LeadScore[]
   dmDrafts     DmDraft[]
+  replies      Reply[]
 
   @@map("target_companies")
 }
@@ -164,7 +166,6 @@ model TargetAccount {
   company      TargetCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   analyses     TargetAnalysis[]
   outreachLogs OutreachLog[]
-  replies      Reply[]
 
   @@map("target_accounts")
 }
@@ -254,6 +255,7 @@ model DmDraft {
   product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   leadScore     LeadScore?    @relation(fields: [leadScoreId], references: [id], onDelete: SetNull)
   outreachLogs  OutreachLog[]
+  replies       Reply[]
 
   @@map("dm_drafts")
 }
@@ -275,52 +277,54 @@ model OutreachLog {
   dmDraft DmDraft       @relation(fields: [dmDraftId], references: [id], onDelete: Cascade)
   account TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  replies Reply[]
 
   @@map("outreach_logs")
 }
 
 /// 返信管理
-/// ターゲットからの返信を記録し、次のアクションを管理
 model Reply {
-  id             String   @id @default(cuid())
-  outreachLogId  String   @map("outreach_log_id")
-  accountId      String   @map("account_id")
-  replyType      String   @map("reply_type") // positive / negative / question / other
-  content        String   // 返信内容
-  sentiment      String?  // 感情分析結果
-  nextAction     String?  @map("next_action") // 次回アクション
-  repliedAt      DateTime @default(now()) @map("replied_at")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id               String    @id @default(cuid())
+  targetCompanyId  String    @map("target_company_id")
+  productId        String?   @map("product_id")
+  dmDraftId        String?   @map("dm_draft_id")
 
-  // リレーション
-  outreachLog OutreachLog   @relation(fields: [outreachLogId], references: [id], onDelete: Cascade)
-  account     TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  replyType        String    @map("reply_type") // interested, detail_requested, schedule_requested, not_now, no_budget, has_vendor, rejected, no_reply
+  content          String?
+  nextAction       String?   @map("next_action")
+  nextFollowUpDate DateTime? @map("next_follow_up_date")
+
+  repliedAt        DateTime  @default(now()) @map("replied_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  targetCompany    TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
+  product          Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  dmDraft          DmDraft?      @relation(fields: [dmDraftId], references: [id], onDelete: SetNull)
+  appointments     Appointment[]
 
   @@map("replies")
 }
 
 /// アポイント管理
-/// 商談のスケジュール・結果・失注理由を記録
 model Appointment {
-  id          String    @id @default(cuid())
-  accountId   String    @map("account_id")
-  productId   String    @map("product_id")
-  companyId   String    @map("company_id")
-  scheduledAt DateTime  @map("scheduled_at") // アポ日時
-  durationMin Int       @default(30) @map("duration_min") // 所要時間（分）
-  meetingType String    @default("online") @map("meeting_type") // online / offline
-  meetingUrl  String?   @map("meeting_url") // 会議URL
-  status      String    @default("scheduled") // scheduled / completed / cancelled / no_show
-  outcome     String?   // 結果
-  lostReason  String?   @map("lost_reason") // 失注理由
-  notes       String?   // メモ
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id               String    @id @default(cuid())
+  targetCompanyId  String    @map("target_company_id")
+  productId        String?   @map("product_id")
+  replyId          String?   @map("reply_id")
 
-  // リレーション
-  company TargetCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  scheduledAt      DateTime? @map("scheduled_at")
+  outcome          String    @default("pending") // pending, appointment_set, proposed, won, lost, follow_up
+  lostReason       String?   @map("lost_reason")
+  amount           Int?
+  nextFollowUpDate DateTime? @map("next_follow_up_date")
+  memo             String?
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  targetCompany    TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
+  product          Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  reply            Reply?        @relation(fields: [replyId], references: [id], onDelete: SetNull)
 
   @@map("appointments")
 }

@@ -9,7 +9,6 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
     where: { id },
     include: {
       accounts: true,
-      appointments: { orderBy: { scheduledAt: 'desc' } },
       leadScores: {
         include: { product: true },
         orderBy: { updatedAt: 'desc' }
@@ -17,7 +16,9 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
       dmDrafts: {
         where: { status: 'approved' },
         select: { id: true }
-      }
+      },
+      replies: { orderBy: { repliedAt: 'desc' }, take: 1 },
+      appointments: { orderBy: { createdAt: 'desc' }, take: 1 }
     }
   });
 
@@ -45,6 +46,8 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
   };
 
   const approvedDraftsCount = target.dmDrafts.length;
+  const latestReply = target.replies[0];
+  const latestAppointment = target.appointments[0];
 
   return (
     <div className="container">
@@ -67,6 +70,9 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link href={`/targets/${id}/replies`} className="btn" style={{ border: '1px solid #059669', color: '#059669' }}>
+              返信・商談管理
+            </Link>
             <Link href={`/targets/${id}/dm`} className="btn" style={{ border: '1px solid var(--primary)', color: 'var(--primary)' }}>
               DM管理・作成
             </Link>
@@ -110,6 +116,29 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
                     </div>
                   </div>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {/* 最新の活動状況 */}
+          {(latestReply || latestAppointment) && (
+            <section className="card">
+              <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>最新の活動状況</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                {latestReply && (
+                  <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>最新の返信</div>
+                    <div style={{ fontWeight: '600' }}>{latestReply.replyType}</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{new Date(latestReply.repliedAt).toLocaleDateString('ja-JP')}</div>
+                  </div>
+                )}
+                {latestAppointment && (
+                  <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>最新の商談結果</div>
+                    <div style={{ fontWeight: '600' }}>{latestAppointment.outcome}</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{latestAppointment.amount ? `¥${latestAppointment.amount.toLocaleString()}` : '記録なし'}</div>
+                  </div>
+                )}
               </div>
             </section>
           )}
