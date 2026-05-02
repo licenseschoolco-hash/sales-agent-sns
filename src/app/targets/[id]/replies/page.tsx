@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createReply, createAppointment, deleteReply, deleteAppointment } from "./actions";
+import { createReply, createAppointment } from "./actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 

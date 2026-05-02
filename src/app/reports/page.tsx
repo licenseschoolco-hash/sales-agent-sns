@@ -1,68 +1,69 @@
-import { prisma } from "@/lib/prisma";
+import { getPipelineReports } from "@/lib/reports/aggregator";
 
-export default async function Reports() {
-  const products = await prisma.product.findMany();
-  
-  // 各商材のパイプラインデータを集計
-  const pipelineData = await Promise.all(products.map(async (product) => {
-    const totalTargets = await prisma.leadScore.count({ where: { productId: product.id } });
-    const highPotential = await prisma.leadScore.count({ where: { productId: product.id, totalScore: { gte: 80 } } });
-    const sent = await prisma.outreachLog.count({ where: { productId: product.id, status: 'sent' } });
-    const positiveReplies = await prisma.reply.count({ 
-      where: { 
-        productId: product.id,
-        replyType: 'interested'
-      } 
-    });
-    const appointments = await prisma.appointment.count({ where: { productId: product.id } });
+export default async function ReportsPage() {
+  const data = await getPipelineReports();
 
-    return {
-      name: product.name,
-      totalTargets,
-      highPotential,
-      sent,
-      positiveReplies,
-      appointments,
-      conversionRate: sent > 0 ? ((appointments / sent) * 100).toFixed(1) : 0
-    };
-  }));
+  const totalSales = data.productPerformance.reduce((acc, p) => acc + p.sales, 0);
+  const totalTargets = data.productPerformance.reduce((acc, p) => acc + p.targets, 0);
+  const totalWon = data.productPerformance.reduce((acc, p) => acc + p.won, 0);
 
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
-        <h1>レポート</h1>
-        <p style={{ color: 'var(--text-muted)' }}>商材別のパイプライン成果分析</p>
+        <h1>営業レポート</h1>
+        <p style={{ color: 'var(--text-muted)' }}>全商材・全プロセスの成果可視化</p>
       </header>
 
-      <div className="card">
-        <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>商材別パフォーマンス</h2>
+      {/* サマリーKPI */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>総売上</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>¥{totalSales.toLocaleString()}</div>
+        </div>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ターゲット総数</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{totalTargets.toLocaleString()}</div>
+        </div>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>成約総数</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#059669' }}>{totalWon.toLocaleString()}</div>
+        </div>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>平均成約率</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+            {totalTargets > 0 ? (totalWon / totalTargets * 100).toFixed(1) : 0}%
+          </div>
+        </div>
+      </div>
+
+      {/* 商材別パフォーマンス */}
+      <div className="card" style={{ marginBottom: '2rem' }}>
+        <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>商材別パイプライン成果</h3>
         <div className="table-container">
           <table>
             <thead>
               <tr>
                 <th>商材名</th>
                 <th style={{ textAlign: 'center' }}>ターゲット</th>
-                <th style={{ textAlign: 'center' }}>高確度 (80+)</th>
-                <th style={{ textAlign: 'center' }}>送信済み</th>
-                <th style={{ textAlign: 'center' }}>ポジ返信</th>
-                <th style={{ textAlign: 'center' }}>アポ獲得</th>
-                <th style={{ textAlign: 'center' }}>CVR (アポ/送信)</th>
+                <th style={{ textAlign: 'center' }}>DM作成</th>
+                <th style={{ textAlign: 'center' }}>承認済み</th>
+                <th style={{ textAlign: 'center' }}>返信数</th>
+                <th style={{ textAlign: 'center' }}>アポ数</th>
+                <th style={{ textAlign: 'center' }}>成約数</th>
+                <th style={{ textAlign: 'right' }}>売上</th>
               </tr>
             </thead>
             <tbody>
-              {pipelineData.map((data) => (
-                <tr key={data.name}>
-                  <td><strong>{data.name}</strong></td>
-                  <td style={{ textAlign: 'center' }}>{data.totalTargets}</td>
-                  <td style={{ textAlign: 'center' }}>{data.highPotential}</td>
-                  <td style={{ textAlign: 'center' }}>{data.sent}</td>
-                  <td style={{ textAlign: 'center' }}>{data.positiveReplies}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span style={{ color: 'var(--success)', fontWeight: '700' }}>{data.appointments}</span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: '600' }}>{data.conversionRate}%</div>
-                  </td>
+              {data.productPerformance.map((p) => (
+                <tr key={p.productId}>
+                  <td><strong>{p.name}</strong></td>
+                  <td style={{ textAlign: 'center' }}>{p.targets}</td>
+                  <td style={{ textAlign: 'center' }}>{p.drafts}</td>
+                  <td style={{ textAlign: 'center' }}>{p.approvedDrafts}</td>
+                  <td style={{ textAlign: 'center' }}>{p.replies} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({p.replyRate}%)</span></td>
+                  <td style={{ textAlign: 'center' }}>{p.appointments}</td>
+                  <td style={{ textAlign: 'center' }}><span style={{ color: '#059669', fontWeight: '700' }}>{p.won}</span></td>
+                  <td style={{ textAlign: 'right', fontWeight: '600' }}>¥{p.sales.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -70,45 +71,93 @@ export default async function Reports() {
         </div>
       </div>
 
-      <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+        {/* 業種別返信率 */}
         <div className="card">
-          <h3 style={{ marginBottom: '1rem' }}>週次アポイント推移 (モック)</h3>
-          <div style={{ height: '200px', background: 'var(--bg-main)', borderRadius: '8px', display: 'flex', alignItems: 'flex-end', padding: '1rem', gap: '0.5rem' }}>
-            {[2, 5, 3, 8, 4, 6, 7].map((h, i) => (
-              <div key={i} style={{ flex: 1, height: `${h * 10}%`, background: 'var(--primary)', borderRadius: '4px 4px 0 0' }}></div>
+          <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>業種別アプローチ状況</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {data.industryPerformance.slice(0, 5).map((ind) => (
+              <div key={ind.industry}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <span>{ind.industry}</span>
+                  <span style={{ fontWeight: '600' }}>{ind.replies}返信 / {ind.count}件 ({ind.replyRate}%)</span>
+                </div>
+                <div style={{ height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${ind.replyRate}%`, background: 'var(--primary)', borderRadius: '4px' }}></div>
+                </div>
+              </div>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            <span>4/20</span>
-            <span>4/21</span>
-            <span>4/22</span>
-            <span>4/23</span>
-            <span>4/24</span>
-            <span>4/25</span>
-            <span>Today</span>
+        </div>
+
+        {/* 優先度分布 & 文面タイプ */}
+        <div className="card">
+          <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>リード優先度分布</h3>
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-end', height: '150px', padding: '0 1rem' }}>
+            {['S', 'A', 'B', 'C'].map(prio => {
+              const count = data.priorityDistribution.find(d => d.priority === prio)?._count.id || 0;
+              const max = Math.max(...data.priorityDistribution.map(d => d._count.id), 1);
+              const height = (count / max) * 100;
+              return (
+                <div key={prio} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{count}</div>
+                  <div style={{ width: '100%', height: `${height}%`, background: prio === 'S' ? '#ef4444' : prio === 'A' ? '#f59e0b' : 'var(--primary)', borderRadius: '4px 4px 0 0' }}></div>
+                  <div style={{ fontWeight: '700' }}>{prio}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
-        
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+        {/* 失注理由ランキング */}
         <div className="card">
-          <h3 style={{ marginBottom: '1rem' }}>返信理由の内訳 (モック)</h3>
-          <ul style={{ listStyle: 'none' }}>
-            <li style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>興味あり</span>
-              <span style={{ fontWeight: '600' }}>45%</span>
-            </li>
-            <li style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>価格が高い</span>
-              <span style={{ fontWeight: '600' }}>20%</span>
-            </li>
-            <li style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>時期尚早</span>
-              <span style={{ fontWeight: '600' }}>15%</span>
-            </li>
-            <li style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>その他</span>
-              <span style={{ fontWeight: '600' }}>20%</span>
-            </li>
-          </ul>
+          <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>失注理由ランキング</h3>
+          {data.lostReasons.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>データなし</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {data.lostReasons.map((r, i) => (
+                <li key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-light)' }}>
+                  <span style={{ fontSize: '0.875rem' }}>{r.reason}</span>
+                  <span style={{ fontWeight: '700' }}>{r.count}件</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* 次回追客予定一覧 */}
+        <div className="card">
+          <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>次回追客予定 (近日)</h3>
+          <div className="table-container">
+            <table style={{ fontSize: '0.875rem' }}>
+              <thead>
+                <tr>
+                  <th>予定日</th>
+                  <th>企業名</th>
+                  <th>種別</th>
+                  <th>メモ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.followUps.map((f) => (
+                  <tr key={f.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{new Date(f.date).toLocaleDateString('ja-JP')}</td>
+                    <td><strong>{f.companyName}</strong></td>
+                    <td><span className="badge badge-researching" style={{ fontSize: '0.7rem' }}>{f.type}</span></td>
+                    <td style={{ color: 'var(--text-muted)' }}>{f.memo || '-'}</td>
+                  </tr>
+                ))}
+                {data.followUps.length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>予定はありません</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
