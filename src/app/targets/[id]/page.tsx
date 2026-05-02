@@ -13,6 +13,10 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
       leadScores: {
         include: { product: true },
         orderBy: { updatedAt: 'desc' }
+      },
+      dmDrafts: {
+        where: { status: 'approved' },
+        select: { id: true }
       }
     }
   });
@@ -40,6 +44,8 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
     C: '#64748b',
   };
 
+  const approvedDraftsCount = target.dmDrafts.length;
+
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
@@ -49,11 +55,21 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ marginBottom: '0.25rem' }}>{target.name}</h1>
-            <span className={`badge badge-${target.status}`}>
-              {statuses[target.status] || target.status}
-            </span>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <span className={`badge badge-${target.status}`}>
+                {statuses[target.status] || target.status}
+              </span>
+              {approvedDraftsCount > 0 && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '600' }}>
+                  ✓ 承認済みDM: {approvedDraftsCount}件
+                </span>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link href={`/targets/${id}/dm`} className="btn" style={{ border: '1px solid var(--primary)', color: 'var(--primary)' }}>
+              DM管理・作成
+            </Link>
             <Link href={`/targets/${id}/score`} className="btn btn-primary">
               スコア判定
             </Link>

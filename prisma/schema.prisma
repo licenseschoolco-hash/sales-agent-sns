@@ -141,6 +141,7 @@ model TargetCompany {
   accounts     TargetAccount[]
   appointments Appointment[]
   leadScores   LeadScore[]
+  dmDrafts     DmDraft[]
 
   @@map("target_companies")
 }
@@ -162,7 +163,6 @@ model TargetAccount {
   // リレーション
   company      TargetCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   analyses     TargetAnalysis[]
-  dmDrafts     DmDraft[]
   outreachLogs OutreachLog[]
   replies      Reply[]
 
@@ -221,6 +221,7 @@ model LeadScore {
   // リレーション
   product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   targetCompany TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
+  dmDrafts      DmDraft[]
 
   @@unique([productId, targetCompanyId])
   @@map("lead_scores")
@@ -234,23 +235,25 @@ model LeadScore {
 /// 同一ターゲット×商材に対して、複数バージョンの下書きを保持
 /// 人間承認型：status が approved になるまで送信しない
 model DmDraft {
-  id          String    @id @default(cuid())
-  accountId   String    @map("account_id")
-  productId   String    @map("product_id")
-  version     Int       @default(1) // バージョン番号
-  subject     String?   // 件名（プラットフォームによる）
-  body        String    // DM本文
-  tone        String    @default("friendly") // トーン（casual / formal / friendly）
-  status      String    @default("draft") // draft / approved / rejected / sent
-  generatedBy String    @default("manual") @map("generated_by") // 生成元（ai / manual）
-  approvedBy  String?   @map("approved_by") // 承認者
-  approvedAt  DateTime? @map("approved_at") // 承認日時
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id              String   @id @default(cuid())
+  targetCompanyId String   @map("target_company_id")
+  productId       String   @map("product_id")
+  leadScoreId     String?  @map("lead_score_id")
+  
+  type            String   // initial, follow_up, schedule, reactivation
+  status          String   @default("draft") // draft, approved, needs_revision, used, archived
+  
+  subject         String?  // 件名
+  body            String   // 本文
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   // リレーション
-  account      TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  outreachLogs OutreachLog[]
+  targetCompany TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  leadScore     LeadScore?    @relation(fields: [leadScoreId], references: [id], onDelete: SetNull)
+  outreachLogs  OutreachLog[]
 
   @@map("dm_drafts")
 }
