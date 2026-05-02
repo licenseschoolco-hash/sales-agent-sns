@@ -140,6 +140,7 @@ model TargetCompany {
   // リレーション
   accounts     TargetAccount[]
   appointments Appointment[]
+  leadScores   LeadScore[]
 
   @@map("target_companies")
 }
@@ -161,7 +162,6 @@ model TargetAccount {
   // リレーション
   company      TargetCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   analyses     TargetAnalysis[]
-  leadScores   LeadScore[]
   dmDrafts     DmDraft[]
   outreachLogs OutreachLog[]
   replies      Reply[]
@@ -192,23 +192,37 @@ model TargetAnalysis {
 
 /// リードスコア履歴
 /// 商材×ターゲットの組み合わせごとにスコアを記録
-/// 履歴として残すことで、スコアの変遷を追跡可能
 model LeadScore {
   id              String   @id @default(cuid())
-  accountId       String   @map("account_id")
   productId       String   @map("product_id")
-  totalScore      Int      @map("total_score") // 総合スコア (0-100)
-  profileScore    Int      @default(0) @map("profile_score") // プロフィールスコア
-  engagementScore Int      @default(0) @map("engagement_score") // エンゲージメントスコア
-  needScore       Int      @default(0) @map("need_score") // ニーズスコア
-  timingScore     Int      @default(0) @map("timing_score") // タイミングスコア
-  scoreReason     String   @map("score_reason") // スコア算出理由
-  scoredAt        DateTime @default(now()) @map("scored_at")
+  targetCompanyId String   @map("target_company_id")
+
+  // 手入力評価項目
+  isHiring        Boolean  @default(false) @map("is_hiring") // 求人中か
+  hasHiringPage   Boolean  @default(false) @map("has_hiring_page") // 採用ページあり
+  videoUsage      String   @default("none") @map("video_usage") // 動画活用 (high, medium, low, none)
+  postFrequency   String   @default("none") @map("post_frequency") // 投稿頻度 (daily, weekly, monthly, none)
+  engagement      String   @default("low") // 反応数 (high, medium, low)
+  hasPhone        Boolean  @default(false) @map("has_phone") // 電話番号あり
+  hasContactForm  Boolean  @default(false) @map("has_contact_form") // 問い合わせフォームあり
+  productFit      Int      @default(3) @map("product_fit") // 商材との適合度 (1-10)
+  hypothesisFit   Int      @default(3) @map("hypothesis_fit") // 課題仮説との一致度 (1-10)
+
+  // スコアリング結果
+  totalScore      Int      @default(0) @map("total_score") // 総合スコア (0-100)
+  priority        String   @default("C") // 優先度 (S, A, B, C)
+  reason          String?  // 理由
+  nextAction      String?  @map("next_action") // 次回アクション
+  status          String   @default("pending")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   // リレーション
-  account TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  targetCompany TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
 
+  @@unique([productId, targetCompanyId])
   @@map("lead_scores")
 }
 

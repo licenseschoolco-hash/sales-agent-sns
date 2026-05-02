@@ -10,6 +10,10 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
     include: {
       accounts: true,
       appointments: { orderBy: { scheduledAt: 'desc' } },
+      leadScores: {
+        include: { product: true },
+        orderBy: { updatedAt: 'desc' }
+      }
     }
   });
 
@@ -29,6 +33,13 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
     ng: 'NG',
   };
 
+  const priorityColors: Record<string, string> = {
+    S: '#ef4444',
+    A: '#f59e0b',
+    B: '#3b82f6',
+    C: '#64748b',
+  };
+
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
@@ -43,6 +54,9 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             </span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link href={`/targets/${id}/score`} className="btn btn-primary">
+              スコア判定
+            </Link>
             <Link href={`/targets/${id}/edit`} className="btn" style={{ border: '1px solid var(--border)' }}>
               編集
             </Link>
@@ -56,6 +70,34 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
         {/* メイン情報 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* スコア一覧 */}
+          {target.leadScores.length > 0 && (
+            <section className="card">
+              <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>判定済みスコア</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {target.leadScores.map(ls => (
+                  <div key={ls.id} style={{ display: 'flex', gap: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', alignItems: 'center' }}>
+                    <div style={{ 
+                      fontSize: '1.5rem', 
+                      fontWeight: '800', 
+                      color: priorityColors[ls.priority] || 'var(--text-main)',
+                      width: '40px',
+                      textAlign: 'center'
+                    }}>{ls.priority}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{ls.product.name}</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{ls.reason}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{ls.totalScore}<span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>点</span></div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>次回: {ls.nextAction}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="card">
             <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>企業詳細情報</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

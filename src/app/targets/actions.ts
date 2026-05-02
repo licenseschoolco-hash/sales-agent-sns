@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { calculateScore, ScoringInput } from "@/lib/scoring/engine";
 
 export async function createTarget(formData: FormData) {
   const name = formData.get("name") as string;
@@ -114,4 +115,38 @@ export async function importTargetsFromCsv(csvText: string) {
 
   revalidatePath("/targets");
   return { success: true, count };
+}
+
+export async function saveLeadScore(targetCompanyId: string, productId: string, data: ScoringInput) {
+  const result = calculateScore(data);
+
+  await prisma.leadScore.upsert({
+    where: {
+      productId_targetCompanyId: {
+        productId,
+        targetCompanyId,
+      },
+    },
+    update: {
+      ...data,
+      totalScore: result.totalScore,
+      priority: result.priority,
+      reason: result.reason,
+      nextAction: result.nextAction,
+      status: "scored",
+    },
+    create: {
+      productId,
+      targetCompanyId,
+      ...data,
+      totalScore: result.totalScore,
+      priority: result.priority,
+      reason: result.reason,
+      nextAction: result.nextAction,
+      status: "scored",
+    },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  redirect(`/targets/${targetCompanyId}`);
 }

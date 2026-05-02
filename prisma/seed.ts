@@ -81,7 +81,23 @@ async function main() {
 
   // --- リードスコア ---
   await prisma.leadScore.create({
-    data: { accountId: accounts[0].id, productId: aiAnime.id, totalScore: 82, profileScore: 20, engagementScore: 22, needScore: 25, timingScore: 15, scoreReason: "採用動画のニーズが高い。" },
+    data: { 
+      targetCompanyId: companies[0].id, 
+      productId: aiAnime.id, 
+      totalScore: 82, 
+      isHiring: true,
+      hasHiringPage: true,
+      videoUsage: "none",
+      postFrequency: "weekly",
+      engagement: "medium",
+      hasPhone: true,
+      productFit: 9,
+      hypothesisFit: 8,
+      priority: "A",
+      reason: "求人募集中のため採用動画のニーズが高い。動画未活用で改善余地大。",
+      nextAction: "1週間以内にDM送信。事例紹介を中心に。",
+      status: "scored"
+    },
   });
 
   console.log("✅ シードデータ投入完了！");
