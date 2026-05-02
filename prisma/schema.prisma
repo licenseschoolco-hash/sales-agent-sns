@@ -124,10 +124,17 @@ model TargetCompany {
   id            String   @id @default(cuid())
   name          String   // 企業名
   industry      String   // 業界
+  region        String?  // 地域
+  contactName   String?  @map("contact_name") // 担当者名
+  snsUrl        String?  @map("sns_url") // SNS URL
   website       String?  // Webサイト
+  jobPageUrl    String?  @map("job_page_url") // 求人ページURL
+  phone         String?  // 電話番号
+  email         String?  // メール
+  notes         String?  // 備考
+  status        String   @default("new") // new, researching, dm_ready, contacted, replied, appointment, won, lost, ng
   employeeCount String?  @map("employee_count") // 従業員規模
   address       String?  // 所在地
-  notes         String?  // 備考
   createdAt     DateTime @default(now()) @map("created_at")
 
   // リレーション

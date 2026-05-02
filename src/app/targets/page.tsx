@@ -1,44 +1,63 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
-export default async function TargetList({ searchParams }: { searchParams: Promise<{ productId?: string }> }) {
+export default async function TargetListPage({ searchParams }: { searchParams: Promise<{ industry?: string; status?: string }> }) {
   const resolvedSearchParams = await searchParams;
-  const products = await prisma.product.findMany();
-  const selectedProductId = resolvedSearchParams.productId || products[0]?.id;
+  
+  const where: { industry?: string; status?: string } = {};
+  if (resolvedSearchParams.industry) where.industry = resolvedSearchParams.industry;
+  if (resolvedSearchParams.status) where.status = resolvedSearchParams.status;
 
-  // 選択された商材に基づいたターゲットとスコアを取得
-  const leadScores = await prisma.leadScore.findMany({
-    where: selectedProductId ? { productId: selectedProductId } : {},
-    include: {
-      account: {
-        include: {
-          company: true,
-        }
-      },
-      product: true,
-    },
-    orderBy: { totalScore: 'desc' },
+  const targets = await prisma.targetCompany.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
   });
+
+  const industries = Array.from(new Set((await prisma.targetCompany.findMany({ select: { industry: true } })).map(t => t.industry)));
+  const statuses = [
+    { id: 'new', name: '新規リード' },
+    { id: 'researching', name: '調査中' },
+    { id: 'dm_ready', name: '準備完了' },
+    { id: 'contacted', name: 'アプローチ済' },
+    { id: 'replied', name: '返信あり' },
+    { id: 'appointment', name: 'アポ獲得' },
+  ];
 
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1>ターゲット一覧</h1>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>商材で絞り込み:</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h1>ターゲット企業一覧</h1>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <Link href="/targets/export" className="btn" style={{ border: '1px solid var(--border)' }}>📥 CSVエクスポート</Link>
+            <Link href="/targets/import" className="btn" style={{ border: '1px solid var(--border)' }}>📤 CSVインポート</Link>
+            <Link href="/targets/new" className="btn btn-primary">+ 新規登録</Link>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '1rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>業種:</span>
             <select 
-              defaultValue={selectedProductId}
+              defaultValue={resolvedSearchParams.industry || ''}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={`window.location.href='/targets?productId=' + this.value` as any}
-              style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-card)' }}
-              // Note: Using standard HTML/JS for quick filter without complexity for now
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onInput={"window.location.href='/targets?productId=' + this.value" as any}
+              onChange={"window.location.href='/targets?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(window.location.search)), industry: this.value }).toString()" as any}
+              style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'white' }}
             >
-              {products.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
+              <option value="">すべて</option>
+              {industries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>ステータス:</span>
+            <select 
+              defaultValue={resolvedSearchParams.status || ''}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onChange={"window.location.href='/targets?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(window.location.search)), status: this.value }).toString()" as any}
+              style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'white' }}
+            >
+              <option value="">すべて</option>
+              {statuses.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
         </div>
@@ -49,51 +68,50 @@ export default async function TargetList({ searchParams }: { searchParams: Promi
           <table>
             <thead>
               <tr>
-                <th>企業 / アカウント</th>
-                <th>プラットフォーム</th>
-                <th style={{ textAlign: 'center' }}>スコア</th>
+                <th>会社名 / 担当者</th>
+                <th>業種 / 地域</th>
                 <th>ステータス</th>
-                <th>次回アクション</th>
+                <th>連絡先 / SNS</th>
+                <th>登録日</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody>
-              {leadScores.map((ls) => (
-                <tr key={ls.id}>
-                  <td>
-                    <div style={{ fontWeight: '600' }}>{ls.account.company.name}</div>
-                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{ls.account.displayName}</div>
-                  </td>
-                  <td>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {ls.account.platform}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <div style={{ 
-                      fontWeight: '700', 
-                      fontSize: '1.125rem',
-                      color: ls.totalScore >= 80 ? 'var(--success)' : ls.totalScore >= 60 ? 'var(--warning)' : 'var(--text-main)'
-                    }}>
-                      {ls.totalScore}
-                    </div>
-                  </td>
-                  <td>
-                    {/* ここでは簡略化のため、最新のアウトリーチ状況をステータスとする */}
-                    <span className="badge badge-neutral">未アプローチ</span>
-                  </td>
-                  <td>
-                    <div style={{ fontSize: '0.875rem' }}>
-                      DM生成・承認待ち
-                    </div>
-                  </td>
-                  <td>
-                    <Link href={`/targets/${ls.account.id}`} className="btn" style={{ fontSize: '0.75rem', border: '1px solid var(--border)' }}>
-                      詳細
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {targets.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ターゲットが登録されていません。</td></tr>
+              ) : (
+                targets.map((t) => (
+                  <tr key={t.id}>
+                    <td>
+                      <div style={{ fontWeight: '600' }}>{t.name}</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t.contactName || '-'}</div>
+                    </td>
+                    <td>
+                      <div>{t.industry}</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t.region || '-'}</div>
+                    </td>
+                    <td>
+                      <span className={`badge badge-${t.status}`}>
+                        {statuses.find(s => s.id === t.status)?.name || t.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '0.875rem' }}>{t.email || '-'}</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--primary)' }}>
+                        {t.snsUrl ? <a href={t.snsUrl} target="_blank" rel="noreferrer">SNS 🔗</a> : '-'}
+                      </div>
+                    </td>
+                    <td style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                      {new Date(t.createdAt).toLocaleDateString('ja-JP')}
+                    </td>
+                    <td>
+                      <Link href={`/targets/${t.id}`} className="btn" style={{ fontSize: '0.75rem', border: '1px solid var(--border)' }}>
+                        詳細
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -1,31 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { deleteTarget } from "../actions";
 
-export default async function TargetDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function TargetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const account = await prisma.targetAccount.findUnique({
+  const target = await prisma.targetCompany.findUnique({
     where: { id },
     include: {
-      company: true,
-      leadScores: {
-        include: { product: true }
-      },
-      dmDrafts: {
-        include: { product: true },
-        orderBy: { createdAt: 'desc' }
-      },
-      outreachLogs: {
-        include: { product: true },
-        orderBy: { createdAt: 'desc' }
-      },
-      replies: {
-        orderBy: { repliedAt: 'desc' }
-      }
+      accounts: true,
+      appointments: { orderBy: { scheduledAt: 'desc' } },
     }
   });
 
-  if (!account) notFound();
+  if (!target) notFound();
+
+  const deleteTargetWithId = deleteTarget.bind(null, id);
+
+  const statuses: Record<string, string> = {
+    new: '新規リード',
+    researching: '調査中',
+    dm_ready: '送信準備完了',
+    contacted: 'アプローチ済み',
+    replied: '返信あり',
+    appointment: 'アポ獲得',
+    won: '成約',
+    lost: '失注',
+    ng: 'NG',
+  };
 
   return (
     <div className="container">
@@ -35,113 +37,102 @@ export default async function TargetDetail({ params }: { params: Promise<{ id: s
         </Link>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1>{account.displayName}</h1>
-            <p style={{ color: 'var(--text-muted)' }}>{account.company.name} ・ {account.platform}</p>
+            <h1 style={{ marginBottom: '0.25rem' }}>{target.name}</h1>
+            <span className={`badge badge-${target.status}`}>
+              {statuses[target.status] || target.status}
+            </span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <a href={account.profileUrl} target="_blank" rel="noopener noreferrer" className="btn" style={{ border: '1px solid var(--border)' }}>
-              SNSプロフィールを開く
-            </a>
-            <button className="btn btn-primary">DMを生成する</button>
+            <Link href={`/targets/${id}/edit`} className="btn" style={{ border: '1px solid var(--border)' }}>
+              編集
+            </Link>
+            <form action={deleteTargetWithId} onSubmit={(e) => { if(!confirm('本当に削除しますか？')) e.preventDefault(); }}>
+              <button type="submit" className="btn" style={{ border: '1px solid #fee2e2', color: '#ef4444' }}>削除</button>
+            </form>
           </div>
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-        <aside>
-          <div className="card">
-            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>アカウント情報</h3>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>バイオ</label>
-              <p style={{ fontSize: '0.875rem' }}>{account.bio || '未設定'}</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+        {/* メイン情報 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <section className="card">
+            <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>企業詳細情報</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>フォロワー数</label>
-                <p>{account.followersCount?.toLocaleString() || '-'}</p>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>業種</label>
+                <p>{target.industry}</p>
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>役職</label>
-                <p>{account.role || '-'}</p>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>地域</label>
+                <p>{target.region || '-'}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>担当者名</label>
+                <p>{target.contactName || '-'}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>電話番号</label>
+                <p>{target.phone || '-'}</p>
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>メールアドレス</label>
+                <p>{target.email || '-'}</p>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="card" style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>商材別スコアリング</h3>
-            {account.leadScores.map((score) => (
-              <div key={score.id} style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-main)', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: '600' }}>{score.product.name}</span>
-                  <span style={{ fontWeight: '700', color: score.totalScore >= 80 ? 'var(--success)' : 'inherit' }}>{score.totalScore}点</span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                  {score.scoreReason}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.7rem' }}>
-                  <div>Profile: {score.profileScore}</div>
-                  <div>Engagement: {score.engagementScore}</div>
-                  <div>Need: {score.needScore}</div>
-                  <div>Timing: {score.timingScore}</div>
-                </div>
+          <section className="card">
+            <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>URL・リンク</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Webサイト</label>
+                {target.website ? <a href={target.website} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{target.website}</a> : '-'}
               </div>
-            ))}
-          </div>
-        </aside>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>SNSプロファイル</label>
+                {target.snsUrl ? <a href={target.snsUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{target.snsUrl}</a> : '-'}
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>求人ページ</label>
+                {target.jobPageUrl ? <a href={target.jobPageUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{target.jobPageUrl}</a> : '-'}
+              </div>
+            </div>
+          </section>
 
-        <section>
-          <div className="card">
-            <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>DM・アウトリーチ履歴</h3>
-            
-            {account.dmDrafts.length === 0 && (
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>履歴がありません</p>
+          <section className="card">
+            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>備考 / メモ</h3>
+            <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{target.notes || '備考はありません。'}</p>
+          </section>
+        </div>
+
+        {/* サイドバー：関連情報 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <section className="card">
+            <h3 style={{ marginBottom: '1rem' }}>SNSアカウント</h3>
+            {target.accounts.length === 0 ? (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>連携済みアカウントなし</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {target.accounts.map(acc => (
+                  <li key={acc.id} style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-light)' }}>
+                    <div style={{ fontWeight: '600' }}>{acc.displayName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{acc.platform}: {acc.accountId}</div>
+                  </li>
+                ))}
+              </ul>
             )}
+            <button className="btn" style={{ width: '100%', marginTop: '1rem', border: '1px solid var(--border)', fontSize: '0.875rem' }}>+ アカウントを追加</button>
+          </section>
 
-            {account.dmDrafts.map((draft) => (
-              <div key={draft.id} style={{ marginBottom: '2rem', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
-                <div style={{ background: 'var(--bg-main)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span className="badge badge-neutral" style={{ marginRight: '0.5rem' }}>v{draft.version}</span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>{draft.product.name}</span>
-                  </div>
-                  <span className={`badge ${
-                    draft.status === 'sent' ? 'badge-success' : 
-                    draft.status === 'approved' ? 'badge-warning' : 'badge-neutral'
-                  }`}>
-                    {draft.status === 'sent' ? '送信済み' : 
-                     draft.status === 'approved' ? '承認済み・待機' : '下書き'}
-                  </span>
-                </div>
-                <div style={{ padding: '1rem', whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>
-                  {draft.body}
-                </div>
-                <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  <span>生成: {draft.generatedBy} ({new Date(draft.createdAt).toLocaleDateString('ja-JP')})</span>
-                  {draft.approvedAt && <span>承認: {new Date(draft.approvedAt).toLocaleDateString('ja-JP')}</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>アポイント・返信</h3>
-            {account.replies.map((reply) => (
-              <div key={reply.id} style={{ marginBottom: '1rem', padding: '1rem', borderLeft: `4px solid ${reply.replyType === 'positive' ? 'var(--success)' : 'var(--border)'}`, background: 'var(--bg-main)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span className="badge badge-success">{reply.replyType}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(reply.repliedAt).toLocaleDateString('ja-JP')}</span>
-                </div>
-                <p style={{ fontSize: '0.9rem' }}>{reply.content}</p>
-                {reply.nextAction && (
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: 'var(--primary)' }}>
-                    次回アクション: {reply.nextAction}
-                  </div>
-                )}
-              </div>
-            ))}
-            {account.replies.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>返信履歴はありません</p>}
-          </div>
-        </section>
+          <section className="card" style={{ background: 'var(--sidebar-bg)', color: 'white' }}>
+            <h3 style={{ marginBottom: '1rem' }}>AI分析ステータス</h3>
+            <p style={{ fontSize: '0.875rem', opacity: 0.8, marginBottom: '1rem' }}>
+              現在、この企業の詳細解析は未実行です。
+            </p>
+            <button disabled className="btn" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', width: '100%', opacity: 0.5 }}>分析を開始 (近日公開)</button>
+          </section>
+        </div>
       </div>
     </div>
   );
