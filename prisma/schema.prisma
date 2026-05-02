@@ -1,0 +1,302 @@
+// ============================================
+// SNS営業OS - データベーススキーマ定義
+// 商材変更可能な設計（product masterを中心に）
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 商材系テーブル
+// ============================================
+
+/// 商材マスター - システムの中心テーブル
+/// 商材を追加・変更するだけで、営業対象を切り替え可能
+model Product {
+  id             String   @id @default(cuid())
+  name           String   // 商材名（例: AIアニメ動画, AI電話）
+  slug           String   @unique // URLスラッグ
+  description    String   // 商材説明
+  targetIndustry String   @map("target_industry") // 対象業界
+  priceRange     String   @map("price_range") // 価格帯
+  status         String   @default("active") // active / inactive / draft
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  targetRoles    ProductTargetRole[]
+  ctas           ProductCTA[]
+  ngExpressions  ProductNGExpression[]
+  painPoints     ProductPainPoint[]
+  valueProps     ProductValueProp[]
+  analyses       TargetAnalysis[]
+  leadScores     LeadScore[]
+  dmDrafts       DmDraft[]
+  outreachLogs   OutreachLog[]
+  appointments   Appointment[]
+
+  @@map("products")
+}
+
+/// 商材ごとのターゲット担当者属性
+model ProductTargetRole {
+  id        String @id @default(cuid())
+  productId String @map("product_id")
+  roleName  String @map("role_name") // 役割名（例: 採用担当, IT責任者）
+  priority  Int    @default(3) // 優先度 (1-5)
+
+  // リレーション
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_target_roles")
+}
+
+/// 商材ごとのCTA (Call to Action)
+model ProductCTA {
+  id        String @id @default(cuid())
+  productId String @map("product_id")
+  title     String // CTA名（例: 資料送付）
+  text      String // 本文で使用する文言
+  sortOrder Int    @default(0) @map("sort_order")
+
+  // リレーション
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_ctas")
+}
+
+/// 商材ごとのNG表現
+model ProductNGExpression {
+  id        String  @id @default(cuid())
+  productId String  @map("product_id")
+  phrase    String  // 禁止フレーズ
+  reason    String? // 禁止理由
+
+  // リレーション
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_ng_expressions")
+}
+
+/// 商材ごとの顧客課題ポイント
+/// DM生成時に課題を訴求するために使用
+model ProductPainPoint {
+  id        String @id @default(cuid())
+  productId String @map("product_id")
+  painPoint String @map("pain_point") // 課題内容
+  severity  Int    @default(3) // 深刻度 (1-5)
+  sortOrder Int    @default(0) @map("sort_order") // 表示順
+
+  // リレーション
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_pain_points")
+}
+
+/// 商材ごとの価値提案
+/// DM生成時に商材の強みをアピールするために使用
+model ProductValueProp {
+  id          String  @id @default(cuid())
+  productId   String  @map("product_id")
+  proposition String  // 提案内容
+  evidence    String? // 根拠・実績データ
+  sortOrder   Int     @default(0) @map("sort_order") // 表示順
+
+  // リレーション
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_value_props")
+}
+
+// ============================================
+// ターゲット系テーブル
+// ============================================
+
+/// ターゲット企業
+/// 企業単位でまとめることで、同一企業の複数アカウントを管理可能
+model TargetCompany {
+  id            String   @id @default(cuid())
+  name          String   // 企業名
+  industry      String   // 業界
+  website       String?  // Webサイト
+  employeeCount String?  @map("employee_count") // 従業員規模
+  address       String?  // 所在地
+  notes         String?  // 備考
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // リレーション
+  accounts     TargetAccount[]
+  appointments Appointment[]
+
+  @@map("target_companies")
+}
+
+/// ターゲット担当者（SNSアカウント）
+/// 企業の中の特定の人物・SNSアカウント
+model TargetAccount {
+  id             String   @id @default(cuid())
+  companyId      String   @map("company_id")
+  platform       String   // SNSプラットフォーム（X, Instagram, LinkedIn等）
+  accountId      String   @map("account_id") // プラットフォーム上のアカウントID
+  displayName    String   @map("display_name") // 表示名
+  role           String?  // 役職
+  profileUrl     String   @map("profile_url") // プロフィールURL
+  followersCount Int?     @map("followers_count") // フォロワー数
+  bio            String?  // プロフィール文
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // リレーション
+  company      TargetCompany  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  analyses     TargetAnalysis[]
+  leadScores   LeadScore[]
+  dmDrafts     DmDraft[]
+  outreachLogs OutreachLog[]
+  replies      Reply[]
+
+  @@map("target_accounts")
+}
+
+/// ターゲット分析結果
+/// 商材ごとに異なる視点で分析するため、product_idを持つ
+model TargetAnalysis {
+  id           String   @id @default(cuid())
+  accountId    String   @map("account_id")
+  productId    String   @map("product_id")
+  analysisType String   @map("analysis_type") // 分析種別（profile / posts / engagement）
+  result       String   // 分析結果（JSON文字列で格納）
+  analyzedAt   DateTime @default(now()) @map("analyzed_at")
+
+  // リレーション
+  account TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("target_analysis")
+}
+
+// ============================================
+// スコアリング系テーブル
+// ============================================
+
+/// リードスコア履歴
+/// 商材×ターゲットの組み合わせごとにスコアを記録
+/// 履歴として残すことで、スコアの変遷を追跡可能
+model LeadScore {
+  id              String   @id @default(cuid())
+  accountId       String   @map("account_id")
+  productId       String   @map("product_id")
+  totalScore      Int      @map("total_score") // 総合スコア (0-100)
+  profileScore    Int      @default(0) @map("profile_score") // プロフィールスコア
+  engagementScore Int      @default(0) @map("engagement_score") // エンゲージメントスコア
+  needScore       Int      @default(0) @map("need_score") // ニーズスコア
+  timingScore     Int      @default(0) @map("timing_score") // タイミングスコア
+  scoreReason     String   @map("score_reason") // スコア算出理由
+  scoredAt        DateTime @default(now()) @map("scored_at")
+
+  // リレーション
+  account TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("lead_scores")
+}
+
+// ============================================
+// DM・アウトリーチ系テーブル
+// ============================================
+
+/// DM下書き（バージョン管理付き）
+/// 同一ターゲット×商材に対して、複数バージョンの下書きを保持
+/// 人間承認型：status が approved になるまで送信しない
+model DmDraft {
+  id          String    @id @default(cuid())
+  accountId   String    @map("account_id")
+  productId   String    @map("product_id")
+  version     Int       @default(1) // バージョン番号
+  subject     String?   // 件名（プラットフォームによる）
+  body        String    // DM本文
+  tone        String    @default("friendly") // トーン（casual / formal / friendly）
+  status      String    @default("draft") // draft / approved / rejected / sent
+  generatedBy String    @default("manual") @map("generated_by") // 生成元（ai / manual）
+  approvedBy  String?   @map("approved_by") // 承認者
+  approvedAt  DateTime? @map("approved_at") // 承認日時
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // リレーション
+  account      TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outreachLogs OutreachLog[]
+
+  @@map("dm_drafts")
+}
+
+/// アウトリーチ実行ログ
+/// 実際にDMを送信した記録。失敗時のエラーも記録
+model OutreachLog {
+  id           String    @id @default(cuid())
+  dmDraftId    String    @map("dm_draft_id")
+  accountId    String    @map("account_id")
+  productId    String    @map("product_id")
+  platform     String    // 送信プラットフォーム
+  sentAt       DateTime? @map("sent_at") // 送信日時
+  status       String    @default("pending") // pending / sent / failed / cancelled
+  errorMessage String?   @map("error_message") // エラーメッセージ
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // リレーション
+  dmDraft DmDraft       @relation(fields: [dmDraftId], references: [id], onDelete: Cascade)
+  account TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  replies Reply[]
+
+  @@map("outreach_logs")
+}
+
+/// 返信管理
+/// ターゲットからの返信を記録し、次のアクションを管理
+model Reply {
+  id             String   @id @default(cuid())
+  outreachLogId  String   @map("outreach_log_id")
+  accountId      String   @map("account_id")
+  replyType      String   @map("reply_type") // positive / negative / question / other
+  content        String   // 返信内容
+  sentiment      String?  // 感情分析結果
+  nextAction     String?  @map("next_action") // 次回アクション
+  repliedAt      DateTime @default(now()) @map("replied_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // リレーション
+  outreachLog OutreachLog   @relation(fields: [outreachLogId], references: [id], onDelete: Cascade)
+  account     TargetAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("replies")
+}
+
+/// アポイント管理
+/// 商談のスケジュール・結果・失注理由を記録
+model Appointment {
+  id          String    @id @default(cuid())
+  accountId   String    @map("account_id")
+  productId   String    @map("product_id")
+  companyId   String    @map("company_id")
+  scheduledAt DateTime  @map("scheduled_at") // アポ日時
+  durationMin Int       @default(30) @map("duration_min") // 所要時間（分）
+  meetingType String    @default("online") @map("meeting_type") // online / offline
+  meetingUrl  String?   @map("meeting_url") // 会議URL
+  status      String    @default("scheduled") // scheduled / completed / cancelled / no_show
+  outcome     String?   // 結果
+  lostReason  String?   @map("lost_reason") // 失注理由
+  notes       String?   // メモ
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // リレーション
+  company TargetCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("appointments")
+}
