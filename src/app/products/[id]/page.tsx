@@ -39,6 +39,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             <form action={deleteProductWithId} onSubmit={(e) => { if(!confirm('本当に削除しますか？')) e.preventDefault(); }}>
               <button type="submit" className="btn" style={{ border: '1px solid #fee2e2', color: '#ef4444' }}>削除</button>
             </form>
+            <Link href={`/products/${id}/search-queries`} className="btn" style={{ border: '1px solid var(--border)' }}>
+              発掘クエリ設定
+            </Link>
             <Link href={`/targets?productId=${product.id}`} className="btn btn-primary">
               ターゲット一覧
             </Link>

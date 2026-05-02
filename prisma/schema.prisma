@@ -41,6 +41,8 @@ model Product {
   outreachLogs   OutreachLog[]
   appointments   Appointment[]
   replies        Reply[]
+  leadCandidates LeadCandidate[]
+  searchQueries  ProductSearchQuery[]
 
   @@map("products")
 }
@@ -143,7 +145,8 @@ model TargetCompany {
   appointments Appointment[]
   leadScores   LeadScore[]
   dmDrafts     DmDraft[]
-  replies      Reply[]
+  replies       Reply[]
+  leadCandidate LeadCandidate?
 
   @@map("target_companies")
 }
@@ -327,4 +330,54 @@ model Appointment {
   reply            Reply?        @relation(fields: [replyId], references: [id], onDelete: SetNull)
 
   @@map("appointments")
+}
+
+// ============================================
+// ターゲット発掘・候補抽出系テーブル
+// ============================================
+
+/// ターゲット候補（発掘段階のアカウント）
+model LeadCandidate {
+  id              String   @id @default(cuid())
+  productId       String   @map("product_id")
+  
+  name            String   // アカウント名 / 表示名
+  type            String   // company, facility, clinic, professional, influencer, media, association, referrer, unknown
+  platform        String   // X, Instagram, LinkedIn, Web
+  accountId       String?  @map("account_id")
+  profileUrl      String?  @map("profile_url")
+  
+  industry        String?
+  followersCount  Int?     @map("followers_count")
+  bio             String?
+  
+  source          String   // 発掘元（X検索, CSV, 手動等）
+  status          String   @default("new") // new, researching, qualified, rejected, promoted, watchlist
+  potentialScore  Int      @default(0) @map("potential_score")
+  
+  searchUrl       String?  @map("search_url")
+  promotionNote   String?  @map("promotion_note") // 昇格時のメモ
+  
+  targetCompanyId String?  @unique @map("target_company_id")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  targetCompany TargetCompany? @relation(fields: [targetCompanyId], references: [id], onDelete: SetNull)
+
+  @@map("lead_candidates")
+}
+
+/// 商材ごとの検索クエリ定義
+model ProductSearchQuery {
+  id        String @id @default(cuid())
+  productId String @map("product_id")
+  platform  String // X, Google, Instagram
+  label     String // 検索名（例: 「求人 営業 AI」）
+  query     String // 検索キーワード
+  
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_search_queries")
 }

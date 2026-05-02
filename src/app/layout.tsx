@@ -28,6 +28,9 @@ export default function RootLayout({
               <Link href="/targets" className="nav-link">
                 <span className="icon">🎯</span> ターゲット一覧
               </Link>
+              <Link href="/discovery" className="nav-link">
+                <span className="icon">🔍</span> ターゲット発掘
+              </Link>
               <Link href="/reports" className="nav-link">
                 <span className="icon">📈</span> レポート
               </Link>
