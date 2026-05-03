@@ -117,6 +117,8 @@ export async function importTargetsFromCsv(csvText: string) {
   return { success: true, count };
 }
 
+import { generateRecruitmentReport, DiagnosisScores } from "@/lib/recruitment-report/generator";
+
 export async function saveLeadScore(targetCompanyId: string, productId: string, data: ScoringInput) {
   const result = calculateScore(data);
 
@@ -149,4 +151,33 @@ export async function saveLeadScore(targetCompanyId: string, productId: string, 
 
   revalidatePath(`/targets/${targetCompanyId}`);
   redirect(`/targets/${targetCompanyId}`);
+}
+
+export async function saveRecruitmentReport(targetCompanyId: string, formData: FormData) {
+  const productId = formData.get("productId") as string;
+  const companyName = formData.get("companyName") as string;
+  
+  const scores: DiagnosisScores = {
+    jobClarity: Number(formData.get("scoreJobClarity")),
+    atmosphere: Number(formData.get("scoreAtmosphere")),
+    dailyRoutine: Number(formData.get("scoreDailyRoutine")),
+    beginnerSafety: Number(formData.get("scoreBeginnerSafety")),
+    applicationFlow: Number(formData.get("scoreApplicationFlow")),
+    appealPower: Number(formData.get("scoreAppealPower")),
+  };
+
+  const reportData = generateRecruitmentReport(companyName, scores);
+
+  const report = await prisma.recruitmentReport.create({
+    data: {
+      targetCompanyId,
+      productId,
+      ...scores,
+      ...reportData,
+      status: "completed",
+    },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  redirect(`/targets/${targetCompanyId}/reports/${report.id}`);
 }

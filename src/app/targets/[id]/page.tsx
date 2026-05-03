@@ -18,7 +18,8 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
         select: { id: true }
       },
       replies: { orderBy: { repliedAt: 'desc' }, take: 1 },
-      appointments: { orderBy: { createdAt: 'desc' }, take: 1 }
+      appointments: { orderBy: { createdAt: 'desc' }, take: 1 },
+      recruitmentReports: { orderBy: { createdAt: 'desc' } }
     }
   });
 
@@ -70,6 +71,9 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link href={`/targets/${id}/reports/new`} className="btn" style={{ border: '1px solid #7c3aed', color: '#7c3aed' }}>
+              📋 診断レポート作成
+            </Link>
             <Link href={`/targets/${id}/replies`} className="btn" style={{ border: '1px solid #059669', color: '#059669' }}>
               返信・商談管理
             </Link>
@@ -120,7 +124,48 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             </section>
           )}
 
+          {/* 採用導線診断レポート */}
+          <section className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0 }}>採用導線診断レポート</h3>
+              <Link href={`/targets/${id}/reports/new`} style={{ fontSize: '0.875rem', color: 'var(--primary)' }}>
+                + 新規作成
+              </Link>
+            </div>
+            {target.recruitmentReports.length === 0 ? (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', padding: '1rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                診断レポートはまだ作成されていません。
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {target.recruitmentReports.map(report => (
+                  <Link 
+                    key={report.id} 
+                    href={`/targets/${id}/reports/${report.id}`}
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      padding: '0.75rem 1rem', 
+                      background: 'var(--bg-secondary)', 
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      color: 'inherit'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.9375rem' }}>総合スコア: {report.totalScore}点</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>作成日: {new Date(report.createdAt).toLocaleDateString('ja-JP')}</div>
+                    </div>
+                    <div style={{ color: 'var(--primary)', fontSize: '0.875rem' }}>レポートを表示 →</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* 最新の活動状況 */}
+
           {(latestReply || latestAppointment) && (
             <section className="card">
               <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>最新の活動状況</h3>

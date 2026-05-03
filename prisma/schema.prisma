@@ -43,6 +43,7 @@ model Product {
   replies        Reply[]
   leadCandidates LeadCandidate[]
   searchQueries  ProductSearchQuery[]
+  recruitmentReports RecruitmentReport[]
 
   @@map("products")
 }
@@ -147,6 +148,7 @@ model TargetCompany {
   dmDrafts     DmDraft[]
   replies       Reply[]
   leadCandidate LeadCandidate?
+  recruitmentReports RecruitmentReport[]
 
   @@map("target_companies")
 }
@@ -380,4 +382,36 @@ model ProductSearchQuery {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   
   @@map("product_search_queries")
+}
+
+/// 採用導線診断レポート
+model RecruitmentReport {
+  id              String   @id @default(cuid())
+  targetCompanyId String   @map("target_company_id")
+  productId       String   @map("product_id")
+  
+  // 診断項目 (1-10点)
+  scoreJobClarity      Int @default(5) @map("score_job_clarity")       // 求人情報のわかりやすさ
+  scoreAtmosphere      Int @default(5) @map("score_atmosphere")        // 職場の雰囲気
+  scoreDailyRoutine    Int @default(5) @map("score_daily_routine")     // 1日の流れ
+  scoreBeginnerSafety  Int @default(5) @map("score_beginner_safety")   // 未経験者への安心材料
+  scoreApplicationFlow Int @default(5) @map("score_application_flow")  // 応募導線のわかりやすさ
+  scoreAppealPower     Int @default(5) @map("score_appeal_power")      // 直接応募につながる訴求力
+  
+  // 総合評価・文章
+  totalScore         Int     @default(0) @map("total_score")
+  generalReview      String? @map("general_review")  // 総評
+  improvementPoints  String? @map("improvement_points") // 改善ポイント
+  proposalMessage    String? @map("proposal_message") // 提案文
+  sendingMessage     String? @map("sending_message")  // 送付用メッセージ
+  
+  status             String  @default("draft") // draft, completed, sent
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  targetCompany TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("recruitment_reports")
 }
