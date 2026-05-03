@@ -125,7 +125,9 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
         <section style={{ textAlign: 'center', padding: '2rem 0', borderTop: '1px solid #e2e8f0' }}>
           <p style={{ fontWeight: '700', marginBottom: '1rem' }}>本診断の詳細解説や具体的な改善事例を、オンライン(Zoom)にて30分程度でご説明可能です。</p>
           <div className="no-print" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-            <button className="btn btn-primary" onClick={() => window.print()}>このレポートを印刷/PDF保存する</button>
+            <div style={{ padding: '0.75rem 1.5rem', background: '#f1f5f9', borderRadius: '8px', fontSize: '0.875rem', color: '#475569', fontWeight: '600' }}>
+              💡 ブラウザの印刷機能（Ctrl+P / Cmd+P）を使用してPDF保存してください
+            </div>
             <Link href={`/targets/${id}`} className="btn" style={{ border: '1px solid var(--border)' }}>ターゲット詳細に戻る</Link>
           </div>
         </section>
