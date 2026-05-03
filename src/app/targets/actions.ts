@@ -172,7 +172,12 @@ export async function saveRecruitmentReport(targetCompanyId: string, formData: F
     data: {
       targetCompanyId,
       productId,
-      ...scores,
+      scoreJobClarity: scores.jobClarity,
+      scoreAtmosphere: scores.atmosphere,
+      scoreDailyRoutine: scores.dailyRoutine,
+      scoreBeginnerSafety: scores.beginnerSafety,
+      scoreApplicationFlow: scores.applicationFlow,
+      scoreAppealPower: scores.appealPower,
       ...reportData,
       status: "completed",
     },
