@@ -139,6 +139,10 @@ model TargetCompany {
   status        String   @default("new") // new, researching, dm_ready, contacted, replied, appointment, won, lost, ng
   employeeCount String?  @map("employee_count") // 従業員規模
   address       String?  // 所在地
+  
+  // 情報源ステータス
+  sourceStatus  String   @default("sns_only") @map("source_status")
+  
   createdAt     DateTime @default(now()) @map("created_at")
 
   // リレーション
@@ -149,8 +153,29 @@ model TargetCompany {
   replies       Reply[]
   leadCandidate LeadCandidate?
   recruitmentReports RecruitmentReport[]
+  sources       InformationSource[]
 
   @@map("target_companies")
+}
+
+/// 情報源管理
+model InformationSource {
+  id                String   @id @default(cuid())
+  targetCompanyId   String   @map("target_company_id")
+  targetCompany     TargetCompany @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
+  
+  sourceType        String   @map("source_type") // official_site, recruitment_page, job_portal, instagram, x, google_map, contact_form, other
+  label             String   // 表示名
+  url               String
+  content           String?  // 取得本文
+  
+  verificationStatus String  @default("pending") @map("verification_status") // pending, verified, error
+  lastVerifiedAt    DateTime? @map("last_verified_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([targetCompanyId])
+  @@map("information_sources")
 }
 
 /// ターゲット担当者（SNSアカウント）
@@ -412,6 +437,10 @@ model RecruitmentReport {
   aiAnalysisLog      String? @map("ai_analysis_log") // AI診断詳細(JSON)
   
   status             String  @default("draft") // draft, ai_draft, completed, sent
+  
+  // 診断タイプ
+  diagnosisType      String  @default("recruitment_video") @map("diagnosis_type")
+  
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
