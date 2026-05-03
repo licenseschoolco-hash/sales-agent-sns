@@ -71,9 +71,14 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Link href={`/targets/${id}/reports/new`} className="btn" style={{ border: '1px solid #7c3aed', color: '#7c3aed' }}>
-              📋 診断レポート作成
-            </Link>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <Link href={`/targets/${id}/reports/new`} className="btn" style={{ border: '1px solid var(--primary)', color: 'var(--primary)', flex: 1, textAlign: 'center' }}>
+                📋 診断レポート作成 (手動)
+              </Link>
+              <Link href={`/targets/${id}/reports/ai`} className="btn btn-primary" style={{ flex: 1, textAlign: 'center' }}>
+                🤖 AI自動診断 (本文貼付)
+              </Link>
+            </div>
             <Link href={`/targets/${id}/replies`} className="btn" style={{ border: '1px solid #059669', color: '#059669' }}>
               返信・商談管理
             </Link>

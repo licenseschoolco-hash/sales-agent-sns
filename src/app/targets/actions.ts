@@ -153,6 +153,8 @@ export async function saveLeadScore(targetCompanyId: string, productId: string, 
   redirect(`/targets/${targetCompanyId}`);
 }
 
+import { analyzeRecruitmentText } from "@/lib/recruitment-report/ai-analyzer";
+
 export async function saveRecruitmentReport(targetCompanyId: string, formData: FormData) {
   const productId = formData.get("productId") as string;
   const companyName = formData.get("companyName") as string;
@@ -185,4 +187,56 @@ export async function saveRecruitmentReport(targetCompanyId: string, formData: F
 
   revalidatePath(`/targets/${targetCompanyId}`);
   redirect(`/targets/${targetCompanyId}/reports/${report.id}`);
+}
+
+export async function runAiDiagnosis(targetCompanyId: string, formData: FormData) {
+  const productId = formData.get("productId") as string;
+  const companyName = formData.get("companyName") as string;
+  const sourceText = formData.get("sourceText") as string;
+  const diagnosisUrl = formData.get("diagnosisUrl") as string;
+
+  if (!sourceText) throw new Error("求人本文を入力してください。");
+
+  const result = await analyzeRecruitmentText(companyName, sourceText);
+
+  // 下書きとして一時保存
+  const report = await prisma.recruitmentReport.create({
+    data: {
+      targetCompanyId,
+      productId,
+      sourceType: "ai",
+      sourceText,
+      diagnosisUrl,
+      scoreJobClarity: result.scores.jobClarity,
+      scoreAtmosphere: result.scores.atmosphere,
+      scoreDailyRoutine: result.scores.dailyRoutine,
+      scoreBeginnerSafety: result.scores.beginnerSafety,
+      scoreApplicationFlow: result.scores.applicationFlow,
+      scoreAppealPower: result.scores.appealPower,
+      totalScore: result.totalScore,
+      generalReview: result.generalReview,
+      improvementPoints: result.improvementPoints,
+      proposalMessage: result.proposalMessage,
+      sendingMessage: result.sendingMessage,
+      aiAnalysisLog: JSON.stringify({
+        reasons: result.reasons,
+        suggestions: result.suggestions,
+        evidences: result.evidences
+      }),
+      status: "ai_draft",
+    },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}/reports/ai`);
+  redirect(`/targets/${targetCompanyId}/reports/ai?draftId=${report.id}`);
+}
+
+export async function confirmAiReport(id: string, targetCompanyId: string) {
+  await prisma.recruitmentReport.update({
+    where: { id },
+    data: { status: "completed" }
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  redirect(`/targets/${targetCompanyId}/reports/${id}`);
 }

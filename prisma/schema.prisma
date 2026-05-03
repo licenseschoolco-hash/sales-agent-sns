@@ -405,7 +405,13 @@ model RecruitmentReport {
   proposalMessage    String? @map("proposal_message") // 提案文
   sendingMessage     String? @map("sending_message")  // 送付用メッセージ
   
-  status             String  @default("draft") // draft, completed, sent
+  // AI診断関連
+  sourceType         String  @default("manual") @map("source_type") // manual, ai
+  diagnosisUrl       String? @map("diagnosis_url") // 診断対象URL
+  sourceText         String? @map("source_text")    // 貼り付けられた本文
+  aiAnalysisLog      String? @map("ai_analysis_log") // AI診断詳細(JSON)
+  
+  status             String  @default("draft") // draft, ai_draft, completed, sent
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
