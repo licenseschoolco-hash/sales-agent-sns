@@ -130,7 +130,7 @@ export default async function DmManagementPage({ params }: { params: Promise<{ i
                         <button type="submit" className="btn btn-primary" style={{ fontSize: '0.75rem' }}>承認</button>
                       </form>
 
-                      <form action={async () => { "use server"; await deleteDraft(draft.id, id); }} onSubmit={(e) => { if(!confirm('削除しますか？')) e.preventDefault(); }}>
+                      <form action={async () => { "use server"; await deleteDraft(draft.id, id); }}>
                         <button type="submit" className="btn" style={{ fontSize: '0.75rem', border: '1px solid #fee2e2', color: '#ef4444' }}>削除</button>
                       </form>
                     </div>
