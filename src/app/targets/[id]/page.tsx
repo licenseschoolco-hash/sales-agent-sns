@@ -19,7 +19,8 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
       },
       replies: { orderBy: { repliedAt: 'desc' }, take: 1 },
       appointments: { orderBy: { createdAt: 'desc' }, take: 1 },
-      recruitmentReports: { orderBy: { createdAt: 'desc' } }
+      recruitmentReports: { orderBy: { createdAt: 'desc' } },
+      sources: { orderBy: { createdAt: 'desc' } }
     }
   });
 
@@ -50,6 +51,33 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
   const latestReply = target.replies[0];
   const latestAppointment = target.appointments[0];
 
+  const sourceStatuses: Record<string, { label: string, color: string }> = {
+    sns_only: { label: 'SNSのみ確認', color: '#64748b' },
+    official_site_confirmed: { label: '公式サイト確認済', color: '#3b82f6' },
+    recruitment_page_confirmed: { label: '採用ページ確認済', color: '#2563eb' },
+    job_portal_confirmed: { label: '求人ポータル確認済', color: '#1d4ed8' },
+    diagnosis_text_collected: { label: '診断本文取得済', color: '#8b5cf6' },
+    human_verified: { label: '人間確認済み', color: '#f59e0b' },
+    ready_to_contact: { label: '送信可', color: '#10b981' },
+  };
+
+  const sourceTypeLabels: Record<string, string> = {
+    official_site: '🌐 公式サイト',
+    recruitment_page: '📄 採用ページ',
+    job_portal: '📦 求人ポータル',
+    instagram: '📸 Instagram',
+    x: '🐦 X (Twitter)',
+    google_map: '📍 Googleマップ',
+    contact_form: '✉️ 問い合わせフォーム',
+    other: '🔗 その他',
+  };
+
+  const verificationStatusLabels: Record<string, { label: string, color: string }> = {
+    pending: { label: '確認待ち', color: '#64748b' },
+    verified: { label: '確認済み', color: '#10b981' },
+    error: { label: 'エラー', color: '#ef4444' },
+  };
+
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
@@ -62,6 +90,17 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <span className={`badge badge-${target.status}`}>
                 {statuses[target.status] || target.status}
+              </span>
+              {/* 情報源ステータスバッジ */}
+              <span style={{ 
+                fontSize: '0.75rem', 
+                padding: '0.125rem 0.5rem', 
+                borderRadius: '9999px', 
+                background: sourceStatuses[target.sourceStatus]?.color || '#64748b',
+                color: 'white',
+                fontWeight: '600'
+              }}>
+                {sourceStatuses[target.sourceStatus]?.label || target.sourceStatus}
               </span>
               {approvedDraftsCount > 0 && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '600' }}>
@@ -192,6 +231,61 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
               </div>
             </section>
           )}
+
+          <section className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0 }}>解析済み情報源</h3>
+            </div>
+            {target.sources.length === 0 ? (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', padding: '1rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                登録済みの情報源はまだありません。
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>ラベル / 種類</th>
+                      <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>URL</th>
+                      <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', fontWeight: '600', textAlign: 'center' }}>検証</th>
+                      <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', fontWeight: '600', textAlign: 'right' }}>確認日</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {target.sources.map(source => (
+                      <tr key={source.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td style={{ padding: '0.75rem 0.5rem' }}>
+                          <div style={{ fontWeight: '600' }}>{source.label}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{sourceTypeLabels[source.sourceType] || source.sourceType}</div>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem' }}>
+                          <a href={source.url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', wordBreak: 'break-all' }}>
+                            {source.url.length > 50 ? `${source.url.substring(0, 50)}...` : source.url}
+                          </a>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
+                          <span style={{ 
+                            fontSize: '0.7rem', 
+                            padding: '0.125rem 0.375rem', 
+                            borderRadius: '4px', 
+                            background: verificationStatusLabels[source.verificationStatus]?.color + '20',
+                            color: verificationStatusLabels[source.verificationStatus]?.color,
+                            border: `1px solid ${verificationStatusLabels[source.verificationStatus]?.color}40`,
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {verificationStatusLabels[source.verificationStatus]?.label || source.verificationStatus}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                          {source.lastVerifiedAt ? new Date(source.lastVerifiedAt).toLocaleDateString('ja-JP') : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
 
           <section className="card">
             <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>企業詳細情報</h3>
