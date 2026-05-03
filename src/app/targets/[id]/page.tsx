@@ -82,7 +82,7 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             <Link href={`/targets/${id}/edit`} className="btn" style={{ border: '1px solid var(--border)' }}>
               編集
             </Link>
-            <form action={deleteTargetWithId} onSubmit={(e) => { if(!confirm('本当に削除しますか？')) e.preventDefault(); }}>
+            <form action={deleteTargetWithId}>
               <button type="submit" className="btn" style={{ border: '1px solid #fee2e2', color: '#ef4444' }}>削除</button>
             </form>
           </div>

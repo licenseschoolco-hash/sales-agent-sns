@@ -36,7 +36,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             <Link href={`/products/${id}/edit`} className="btn" style={{ border: '1px solid var(--border)' }}>
               編集
             </Link>
-            <form action={deleteProductWithId} onSubmit={(e) => { if(!confirm('本当に削除しますか？')) e.preventDefault(); }}>
+            <form action={deleteProductWithId}>
               <button type="submit" className="btn" style={{ border: '1px solid #fee2e2', color: '#ef4444' }}>削除</button>
             </form>
             <Link href={`/products/${id}/search-queries`} className="btn" style={{ border: '1px solid var(--border)' }}>

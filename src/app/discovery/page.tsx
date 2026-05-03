@@ -148,7 +148,7 @@ export default async function DiscoveryPage() {
                           {c.status === 'promoted' && c.targetCompanyId && (
                             <Link href={`/targets/${c.targetCompanyId}`} className="btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', border: '1px solid var(--primary)', color: 'var(--primary)' }}>詳細</Link>
                           )}
-                          <form action={deleteCandidate.bind(null, c.id)} onSubmit={(e) => { if(!confirm('削除しますか？')) e.preventDefault(); }}>
+                          <form action={deleteCandidate.bind(null, c.id)}>
                             <button type="submit" style={{ color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
                           </form>
                         </div>
