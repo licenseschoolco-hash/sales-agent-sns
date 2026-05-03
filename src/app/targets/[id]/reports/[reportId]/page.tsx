@@ -33,9 +33,31 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
           color: #1a202c;
         }
         @media print {
-          body { background: white !important; }
+          @page { size: A4; margin: 0; }
+          body { 
+            background: white !important; 
+            margin: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          /* 印刷時にレポート本体以外の全ての要素を隠す */
+          nav, aside, header.no-print, footer, .sidebar, .navbar {
+            display: none !important;
+          }
+
+          .report-container { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important; 
+            max-width: none !important;
+            padding: 15mm !important;
+            margin: 0 !important;
+            background: white !important;
+          }
+          
           .no-print { display: none !important; }
-          .report-container { width: 100%; padding: 0; }
           .card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; break-inside: avoid; }
         }
         .report-header {
