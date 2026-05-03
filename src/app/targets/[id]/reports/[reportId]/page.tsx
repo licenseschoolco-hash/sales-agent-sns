@@ -23,76 +23,113 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
   ];
 
   return (
-    <div className="container">
-      <header style={{ marginBottom: '2rem' }}>
-        <Link href={`/targets/${id}`} style={{ color: 'var(--primary)', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>
+    <div className="container report-container">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .report-container {
+          max-width: 840px;
+          margin: 0 auto;
+          padding: 2rem;
+          background: white;
+          color: #1a202c;
+        }
+        @media print {
+          body { background: white !important; }
+          .no-print { display: none !important; }
+          .report-container { width: 100%; padding: 0; }
+          .card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; break-inside: avoid; }
+        }
+        .report-header {
+          border-bottom: 2px solid var(--primary);
+          padding-bottom: 1.5rem;
+          margin-bottom: 2rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        }
+        .section-title {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--primary);
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .advice-box {
+          background: #f8fafc;
+          border-left: 4px solid var(--primary);
+          padding: 1.5rem;
+          border-radius: 0 8px 8px 0;
+          margin-bottom: 2rem;
+        }
+      `}} />
+
+      <header className="no-print" style={{ marginBottom: '1rem' }}>
+        <Link href={`/targets/${id}`} style={{ color: 'var(--primary)', fontSize: '0.875rem' }}>
           ← ターゲット詳細に戻る
         </Link>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <h1 style={{ marginBottom: '0.5rem' }}>採用導線診断レポート</h1>
-            <p style={{ color: 'var(--text-muted)' }}>対象企業: {report.targetCompany.name}</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>総合スコア</div>
-            <div style={{ fontSize: '3rem', fontWeight: '800', color: 'var(--primary)', lineHeight: 1 }}>
-              {report.totalScore}<span style={{ fontSize: '1.25rem' }}>/100</span>
-            </div>
-          </div>
-        </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        {/* 左側：グラフと評価 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <section className="card">
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>項目別診断</h3>
-            <DiagnosisBarChart items={chartItems} />
-          </section>
-
-          <section className="card">
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>総評</h3>
-            <p style={{ lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{report.generalReview}</p>
-          </section>
+      <div className="report-header">
+        <div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: '700', marginBottom: '0.25rem' }}>採用パートナー診断レポート</div>
+          <h1 style={{ fontSize: '1.75rem', margin: 0 }}>{report.targetCompany.name} 様</h1>
         </div>
-
-        {/* 右側：改善策と提案 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <section className="card" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderLeft: '4px solid var(--primary)' }}>
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>改善ポイントとご提案</h3>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--primary)', marginBottom: '0.5rem' }}>重点改善項目</div>
-              <p style={{ whiteSpace: 'pre-wrap', fontSize: '0.9375rem' }}>{report.improvementPoints}</p>
-            </div>
-            <div>
-              <div style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--primary)', marginBottom: '0.5rem' }}>{report.product.name}による解決策</div>
-              <p style={{ whiteSpace: 'pre-wrap', fontSize: '0.9375rem', lineHeight: '1.6' }}>{report.proposalMessage}</p>
-            </div>
-          </section>
-
-          <section className="card">
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>送付用メッセージ</h3>
-            <div style={{ 
-              padding: '1rem', 
-              background: '#f8fafc', 
-              border: '1px dashed var(--border)', 
-              borderRadius: '8px',
-              fontSize: '0.875rem',
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap'
-            }}>
-              {report.sendingMessage}
-            </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
-              ※ 上記メッセージをコピーしてSNSのDM等で送信してください。
-            </p>
-          </section>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>総合評価スコア</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary)', lineHeight: 1 }}>
+            {report.totalScore}<span style={{ fontSize: '1rem', fontWeight: '400' }}>点</span>
+          </div>
         </div>
       </div>
 
-      <footer style={{ marginTop: '3rem', textAlign: 'center', padding: '2rem 0', borderTop: '1px solid var(--border)' }}>
-        <Link href={`/targets/${id}`} className="btn" style={{ border: '1px solid var(--border)' }}>詳細に戻る</Link>
-      </footer>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+        {/* 総評セクション */}
+        <section>
+          <div className="section-title">■ 診断総評</div>
+          <p style={{ lineHeight: '1.8', fontSize: '1rem' }}>{report.generalReview}</p>
+        </section>
+
+        {/* グラフセクション */}
+        <section className="card" style={{ padding: '2rem' }}>
+          <div className="section-title">■ 項目別診断結果</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <DiagnosisBarChart items={chartItems.slice(0, 3)} />
+            <DiagnosisBarChart items={chartItems.slice(3)} />
+          </div>
+        </section>
+
+        {/* 改善アドバイス */}
+        <section>
+          <div className="section-title">■ 具体的な改善アドバイス</div>
+          <div className="advice-box">
+            <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', margin: 0 }}>{report.improvementPoints}</p>
+          </div>
+        </section>
+
+        {/* 解決策の提案 */}
+        <section className="card" style={{ padding: '2rem', background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+          <div className="section-title" style={{ color: '#0369a1' }}>■ 次の一手：動画と視覚情報の活用</div>
+          <p style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap', margin: 0 }}>{report.proposalMessage}</p>
+        </section>
+
+        {/* 送付・アクション */}
+        <section className="no-print card" style={{ padding: '1.5rem', border: '1px dashed var(--border)' }}>
+          <div style={{ fontWeight: '700', marginBottom: '1rem' }}>【社内控】送付用メッセージ</div>
+          <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '4px', fontSize: '0.875rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+            {report.sendingMessage}
+            {`\nhttps://example.com/targets/${id}/reports/${report.id}`}
+          </div>
+        </section>
+
+        <section style={{ textAlign: 'center', padding: '2rem 0', borderTop: '1px solid #e2e8f0' }}>
+          <p style={{ fontWeight: '700', marginBottom: '1rem' }}>本診断の詳細解説や具体的な改善事例を、オンライン(Zoom)にて30分程度でご説明可能です。</p>
+          <div className="no-print" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            <button className="btn btn-primary" onClick={() => window.print()}>このレポートを印刷/PDF保存する</button>
+            <Link href={`/targets/${id}`} className="btn" style={{ border: '1px solid var(--border)' }}>ターゲット詳細に戻る</Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

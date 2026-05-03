@@ -18,18 +18,20 @@ export default function DiagnosisBarChart({ items }: { items: BarItem[] }) {
             <span style={{ fontWeight: '700', color: 'var(--primary)' }}>{item.score} / 10</span>
           </div>
           <div style={{ 
-            height: '12px', 
-            background: 'var(--bg-secondary)', 
-            borderRadius: '6px', 
+            height: '10px', 
+            background: '#f1f5f9', 
+            borderRadius: '5px', 
             overflow: 'hidden',
-            border: '1px solid var(--border-light)'
+            border: '1px solid #e2e8f0',
+            WebkitPrintColorAdjust: 'exact'
           }}>
             <div style={{ 
               height: '100%', 
               width: `${item.score * 10}%`, 
-              background: item.score >= 8 ? '#10b981' : item.score >= 5 ? 'var(--primary)' : '#ef4444',
-              borderRadius: '6px',
-              transition: 'width 1s ease-out'
+              background: item.score >= 8 ? '#10b981' : item.score >= 5 ? '#3b82f6' : '#ef4444',
+              borderRadius: '5px',
+              transition: 'width 1s ease-out',
+              WebkitPrintColorAdjust: 'exact'
             }}></div>
           </div>
         </div>
