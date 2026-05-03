@@ -35,13 +35,12 @@ export default async function TargetListPage({ searchParams }: { searchParams: P
           </div>
         </div>
 
-        <div className="card" style={{ padding: '1rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <form method="GET" action="/targets" className="card" style={{ padding: '1rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>業種:</span>
             <select 
+              name="industry"
               defaultValue={resolvedSearchParams.industry || ''}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={"window.location.href='/targets?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(window.location.search)), industry: this.value }).toString()" as any}
               style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'white' }}
             >
               <option value="">すべて</option>
@@ -51,16 +50,16 @@ export default async function TargetListPage({ searchParams }: { searchParams: P
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>ステータス:</span>
             <select 
+              name="status"
               defaultValue={resolvedSearchParams.status || ''}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={"window.location.href='/targets?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(window.location.search)), status: this.value }).toString()" as any}
               style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'white' }}
             >
               <option value="">すべて</option>
               {statuses.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
-        </div>
+          <button type="submit" className="btn" style={{ fontSize: '0.875rem', padding: '0.4rem 1rem', border: '1px solid var(--border)', cursor: 'pointer' }}>絞り込み</button>
+        </form>
       </header>
 
       <div className="card">
