@@ -240,3 +240,104 @@ export async function confirmAiReport(id: string, targetCompanyId: string) {
   revalidatePath(`/targets/${targetCompanyId}`);
   redirect(`/targets/${targetCompanyId}/reports/${id}`);
 }
+
+// ============================================
+// 情報源管理 (InformationSource) 関連
+// ============================================
+
+const ALLOWED_SOURCE_TYPES = [
+  "official_site", "recruitment_page", "job_portal", "instagram", "x", 
+  "google_map", "contact_form", "other"
+];
+
+const ALLOWED_SOURCE_STATUSES = [
+  "sns_only", "official_site_confirmed", "recruitment_page_confirmed", 
+  "job_portal_confirmed", "diagnosis_text_collected", "human_verified", "ready_to_contact"
+];
+
+const ALLOWED_VERIFICATION_STATUSES = ["pending", "verified", "error"];
+
+export async function createInformationSource(targetCompanyId: string, formData: FormData) {
+  const sourceType = formData.get("sourceType") as string;
+  const label = formData.get("label") as string;
+  const url = formData.get("url") as string;
+  const content = formData.get("content") as string;
+  const verificationStatus = (formData.get("verificationStatus") as string) || "pending";
+
+  if (!ALLOWED_SOURCE_TYPES.includes(sourceType)) {
+    throw new Error(`Invalid sourceType: ${sourceType}`);
+  }
+  if (!ALLOWED_VERIFICATION_STATUSES.includes(verificationStatus)) {
+    throw new Error(`Invalid verificationStatus: ${verificationStatus}`);
+  }
+  if (!label || !url) {
+    throw new Error("Label and URL are required.");
+  }
+
+  await prisma.informationSource.create({
+    data: {
+      targetCompanyId,
+      sourceType,
+      label,
+      url,
+      content,
+      verificationStatus,
+    },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  revalidatePath(`/targets/${targetCompanyId}/sources`);
+}
+
+export async function updateInformationSource(id: string, targetCompanyId: string, formData: FormData) {
+  const sourceType = formData.get("sourceType") as string;
+  const label = formData.get("label") as string;
+  const url = formData.get("url") as string;
+  const content = formData.get("content") as string;
+  const verificationStatus = formData.get("verificationStatus") as string;
+
+  if (sourceType && !ALLOWED_SOURCE_TYPES.includes(sourceType)) {
+    throw new Error(`Invalid sourceType: ${sourceType}`);
+  }
+  if (verificationStatus && !ALLOWED_VERIFICATION_STATUSES.includes(verificationStatus)) {
+    throw new Error(`Invalid verificationStatus: ${verificationStatus}`);
+  }
+
+  await prisma.informationSource.update({
+    where: { id },
+    data: {
+      sourceType,
+      label,
+      url,
+      content,
+      verificationStatus,
+      lastVerifiedAt: verificationStatus === "verified" ? new Date() : undefined,
+    },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  revalidatePath(`/targets/${targetCompanyId}/sources`);
+}
+
+export async function deleteInformationSource(id: string, targetCompanyId: string) {
+  await prisma.informationSource.delete({
+    where: { id },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  revalidatePath(`/targets/${targetCompanyId}/sources`);
+}
+
+export async function updateTargetSourceStatus(targetCompanyId: string, sourceStatus: string) {
+  if (!ALLOWED_SOURCE_STATUSES.includes(sourceStatus)) {
+    throw new Error(`Invalid sourceStatus: ${sourceStatus}`);
+  }
+
+  await prisma.targetCompany.update({
+    where: { id: targetCompanyId },
+    data: { sourceStatus },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+  revalidatePath(`/targets/${targetCompanyId}/sources`);
+}
