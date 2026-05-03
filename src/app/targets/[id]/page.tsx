@@ -235,6 +235,9 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
           <section className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
               <h3 style={{ margin: 0 }}>解析済み情報源</h3>
+              <Link href={`/targets/${id}/sources`} style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: '600' }}>
+                ⚙️ 管理・追加
+              </Link>
             </div>
             {target.sources.length === 0 ? (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', padding: '1rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px' }}>

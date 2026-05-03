@@ -328,7 +328,9 @@ export async function deleteInformationSource(id: string, targetCompanyId: strin
   revalidatePath(`/targets/${targetCompanyId}/sources`);
 }
 
-export async function updateTargetSourceStatus(targetCompanyId: string, sourceStatus: string) {
+export async function updateTargetSourceStatus(targetCompanyId: string, formData: FormData) {
+  const sourceStatus = formData.get("sourceStatus") as string;
+
   if (!ALLOWED_SOURCE_STATUSES.includes(sourceStatus)) {
     throw new Error(`Invalid sourceStatus: ${sourceStatus}`);
   }
