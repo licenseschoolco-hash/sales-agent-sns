@@ -12,7 +12,7 @@ export default async function ScorePage({ params, searchParams }: { params: Prom
   if (!target) notFound();
 
   const products = await prisma.product.findMany({ where: { status: 'active' } });
-  const selectedProduct = productId ? products.find(p => p.id === productId) : null;
+
 
   async function handleAction(formData: FormData) {
     "use server";
@@ -50,8 +50,6 @@ export default async function ScorePage({ params, searchParams }: { params: Prom
               defaultValue={productId || ''} 
               required
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'white' }}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={"window.location.href=`/targets/${id}/score?productId=${this.value}`" as any}
             >
               <option value="">商材を選択してください</option>
               {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
