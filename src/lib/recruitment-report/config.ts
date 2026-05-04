@@ -76,24 +76,55 @@ export const DIAGNOSIS_CONFIG: Record<DiagnosisType, DiagnosisTypeConfig> = {
   dental_ai_phone: {
     type: "dental_ai_phone",
     title: "予約・電話導線診断レポート",
-    subtitle: "患者利便性と受付負担軽減の分析",
+    subtitle: "電話・Web予約導線の機会損失をAIが分析",
     industry: "歯科・クリニック",
     targetDescription: "歯科医院・クリニックの院長・事務長様",
     scores: [
-      { key: "scoreJobClarity", label: "Web予約導線の使いやすさ", advice: "TOPページから1クリックで予約画面に遷移できるかが重要です。" },
-      { key: "scoreAtmosphere", label: "電話番号の視認性", advice: "スマホで見た際に、タップで即座に発信できるアイコン配置を推奨します。" },
-      { key: "scoreDailyRoutine", label: "診療時間外の受付体制", advice: "夜間や休診日の電話取りこぼしは、新患獲得の機会損失に直結します。" },
-      { key: "scoreBeginnerSafety", label: "スマホ予約の最適化", advice: "スマホユーザーがストレスなく入力できるフォーム設計がCVRを左右します。" },
-      { key: "scoreApplicationFlow", label: "LINE/Googleマップ導線", advice: "マップからの予約導線を整えることで、地域密着型の集客が強化されます。" },
-      { key: "scoreAppealPower", label: "自費診療への誘導力", advice: "専門性の高い治療への理解を深める解説動画があると、自費率の向上が期待できます。" },
+      { 
+        key: "scoreJobClarity", 
+        label: "Web予約導線の使いやすさ", 
+        advice: "サイトTOPから予約完了まで、患者様が迷わず辿り着ける導線を強化することで、離脱を防げる可能性があります。" 
+      },
+      { 
+        key: "scoreAtmosphere", 
+        label: "電話番号の見つけやすさ", 
+        advice: "モバイル表示において、タップですぐに発信できる状態を整えることは、急な痛みでお困りの患者様への安心感に繋がります。" 
+      },
+      { 
+        key: "scoreDailyRoutine", 
+        label: "診療時間外・昼休みの受付体制", 
+        advice: "診療時間外や昼休みの時間帯に、予約希望や問い合わせを一時的に受け付ける体制は、機会損失対策として有効です。" 
+      },
+      { 
+        key: "scoreBeginnerSafety", 
+        label: "初診・スマホ予約の最適化", 
+        advice: "初診の患者様がスマホでストレスなく入力できるフォーム設計は、新患獲得率を向上させる重要な要素となります。" 
+      },
+      { 
+        key: "scoreApplicationFlow", 
+        label: "LINE/Googleマップ導線", 
+        advice: "マップやSNSからの予約連携をスムーズにすることで、地域の方々がより貴院を選びやすくなる可能性があります。" 
+      },
+      { 
+        key: "scoreAppealPower", 
+        label: "自費・専門診療への誘導力", 
+        advice: "矯正やインプラント等の自費診療に関心がある患者様に対し、Web上での案内を強化することで、相談のきっかけを増やせる余地があります。" 
+      },
     ],
-    promptRole: "あなたは歯科医院経営に精通した増患・DXコンサルタントです。",
-    promptFocus: "新患の予約しやすさと、受付スタッフの電話対応負荷のバランス",
-    expressionGuards: COMMON_EXPRESSION_GUARDS,
+    promptRole: "あなたは歯科医院の経営支援と患者導線の最適化に精通した増患・DXコンサルタントです。",
+    promptFocus: "新患獲得における予約導線の利便性と、診療時間外の一次受付体制による機会損失の防止、および受付スタッフ様の負担軽減。",
+    expressionGuards: [
+      ...COMMON_EXPRESSION_GUARDS,
+      "「24時間予約が完結する」ではなく「24時間の一次受付が可能になる」「時間外の予約希望を受付できる」と表現すること",
+      "AI電話を万能視せず、「Web予約やLINE予約を補完し、電話対応が残る場面での機会損失を防ぐ選択肢」として位置づけること",
+      "スタッフの対応を批判せず、「診療に集中できる環境を整えるための一案」として提案すること",
+      "新患増加を断定（必ず増える等）せず、「予約機会の取りこぼし対策として有効である」と表現すること",
+      "医療広告ガイドラインを意識し、誇大な効能表現や他院との比較による誹謗を避けること"
+    ],
     proposalProduct: "AI電話予約システム",
-    proposalTemplate: "「{weakItem}」の課題解決には、24時間365日対応のAI電話が最適です。スタッフの手を止めず、予約の取りこぼしをゼロにします。",
-    cta: "AI電話・予約導線改善相談会（Zoom15分）",
-    sendingMessageTemplate: "患者様の「予約のしづらさ」と、スタッフ様の「電話対応負荷」を同時に解消するための診断結果をまとめました。",
+    proposalTemplate: "「{weakItem}」の改善に向けた一案として、Web予約を補完する『AI電話による一次受付』の導入が検討の余地があります。診療中や時間外の予約希望を漏らさず受付けることで、機会損失の防止に貢献できる可能性があります。",
+    cta: "AI電話・予約導線改善シミュレーション（Zoom15分）",
+    sendingMessageTemplate: "患者様の利便性向上と、スタッフ様の受付負担を両立するための「予約導線診断結果」をまとめました。経営のヒントとしてご一読ください。",
   },
   sales_os: {
     type: "sales_os",
