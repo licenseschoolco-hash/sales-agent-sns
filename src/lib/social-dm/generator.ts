@@ -1,4 +1,4 @@
-import { DIAGNOSIS_CONFIG, getDiagnosisConfig } from "../recruitment-report/config";
+import { DIAGNOSIS_CONFIG, getDiagnosisConfig, COMMON_EXPRESSION_GUARDS } from "../recruitment-report/config";
 
 export type SocialDmType = "INITIAL_CONTACT" | "FREE_DIAGNOSIS_OFFER" | "PDF_SEND" | "ZOOM_INVITE";
 
@@ -26,8 +26,8 @@ export async function generateSocialDm(params: GenerateDmParams): Promise<string
 
   const config = getDiagnosisConfig(params.diagnosisType || undefined);
   
-  // 歯科AI電話向けの特別ルールを統合
-  const customGuards = [...config.expressionGuards];
+  // 表現ルールを統合
+  const customGuards = [...COMMON_EXPRESSION_GUARDS, ...config.expressionGuards];
   if (params.diagnosisType === "dental_ai_phone") {
     customGuards.push(
       "「24時間予約が完結する」「24時間予約受付」という表現は避け、「時間外の一次受付」「予約希望の一次受付」とすること",
@@ -79,6 +79,9 @@ ${params.pastLogs?.length ? params.pastLogs.join("\n") : "なし"}
 - 歯科AI電話の場合、24時間予約の完結を謳わず、時間外の一次受付やスタッフ負担軽減に触れる。
 - 相手の投稿を具体的に見ていない場合は、「投稿を拝見しました」と断定せず「プロフィールを拝見しました」とする。
 - 最後に、無理な営業ではないことや、不要であればご放念いただく旨を添える。
+
+【診断タイプ別の厳守ルール】
+${customGuards.map(g => `- ${g}`).join("\n")}
 
 【診断タイプ別の文脈】
 ${config.promptFocus}
