@@ -3,9 +3,19 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSocialTouchLog } from "../actions";
 import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
+import { generateSocialDm, SocialDmType } from "@/lib/social-dm/generator";
 
-export default async function SocialLeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SocialLeadDetailPage({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ id: string }>,
+  searchParams: Promise<{ dmType?: string; generateDm?: string }>
+}) {
   const { id } = await params;
+  const { dmType: rawDmType, generateDm } = await searchParams;
+  const dmType = rawDmType as SocialDmType | undefined;
+  const shouldGenerate = generateDm === "1" && dmType;
 
   // データの取得
   const lead = await prisma.socialLeadCandidate.findUnique({
@@ -22,6 +32,24 @@ export default async function SocialLeadDetailPage({ params }: { params: Promise
 
   if (!lead) {
     notFound();
+  }
+
+  // DM下書きの生成（リクエストがある場合のみ）
+  let generatedDm = "";
+  if (shouldGenerate && dmType) {
+    const pastLogs = lead.touchLogs.slice(0, 5).map(log => `[${log.type}] ${log.content}`);
+    generatedDm = await generateSocialDm({
+      leadId: lead.id,
+      name: lead.name,
+      handle: lead.handle,
+      snsType: lead.snsType,
+      profileText: lead.profileText,
+      diagnosisType: lead.diagnosisType,
+      productName: lead.product?.name || null,
+      notes: lead.notes,
+      dmType,
+      pastLogs,
+    });
   }
 
   return (
@@ -53,8 +81,66 @@ export default async function SocialLeadDetailPage({ params }: { params: Promise
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: "2rem" }}>
-        {/* 左側：接触履歴 */}
+        {/* 左側：DM作成支援と接触履歴 */}
         <div>
+          {/* DM作成支援セクション */}
+          <section className="card" style={{ marginBottom: "2rem", border: "2px solid var(--primary-light)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+              <span style={{ fontSize: "1.5rem" }}>✉️</span>
+              <h2 style={{ margin: 0, fontSize: "1.25rem" }}>DM作成支援 (AI)</h2>
+            </div>
+
+            <form method="GET" style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#f8fafc", borderRadius: "8px" }}>
+              <input type="hidden" name="generateDm" value="1" />
+              <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", marginBottom: "0.3rem", fontSize: "0.875rem", fontWeight: "600" }}>DM種別を選択</label>
+                  <select name="dmType" defaultValue={dmType || "INITIAL_CONTACT"} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border)" }}>
+                    <option value="INITIAL_CONTACT">初回接触DM</option>
+                    <option value="FREE_DIAGNOSIS_OFFER">無料診断誘導DM</option>
+                  </select>
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ height: "40px" }}>
+                  下書きを生成する
+                </button>
+              </div>
+              <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                ※生成には数秒かかります。ページが再読み込みされます。
+              </p>
+            </form>
+
+            {generatedDm && (
+              <div style={{ padding: "1rem", backgroundColor: "#fff", border: "1px solid var(--primary-light)", borderRadius: "8px" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: "600", color: "var(--primary)" }}>
+                  生成されたDM下書き
+                </label>
+                <textarea
+                  readOnly
+                  rows={8}
+                  value={generatedDm}
+                  style={{ 
+                    width: "100%", 
+                    padding: "0.75rem", 
+                    borderRadius: "4px", 
+                    border: "1px solid var(--border)",
+                    backgroundColor: "#fcfcfc",
+                    fontSize: "0.9rem",
+                    lineHeight: "1.5",
+                    marginBottom: "1rem"
+                  }}
+                />
+                <div style={{ padding: "0.75rem", backgroundColor: "#fffbeb", border: "1px solid #fef3c7", borderRadius: "6px", fontSize: "0.8rem", color: "#92400e" }}>
+                  <p style={{ margin: "0 0 0.5rem 0", fontWeight: "bold" }}>⚠️ ご注意・次のステップ</p>
+                  <ul style={{ margin: 0, paddingLeft: "1.2rem" }}>
+                    <li>この文章をコピーして、SNS上で手動で送信してください。</li>
+                    <li><strong>この画面から自動送信はされません。</strong> 内容は必ず確認・修正してください。</li>
+                    <li>送信後は、下の「接触履歴」フォームから <strong>DM_SENT</strong> として記録を残してください。</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </section>
+
           <section className="card" style={{ marginBottom: "2rem" }}>
             <h2 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>接触履歴</h2>
             
