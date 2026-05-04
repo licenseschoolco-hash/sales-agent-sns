@@ -1,6 +1,6 @@
 import { DIAGNOSIS_CONFIG, getDiagnosisConfig } from "../recruitment-report/config";
 
-export type SocialDmType = "INITIAL_CONTACT" | "FREE_DIAGNOSIS_OFFER";
+export type SocialDmType = "INITIAL_CONTACT" | "FREE_DIAGNOSIS_OFFER" | "PDF_SEND" | "ZOOM_INVITE";
 
 export interface GenerateDmParams {
   leadId: string;
@@ -36,9 +36,21 @@ export async function generateSocialDm(params: GenerateDmParams): Promise<string
     );
   }
 
-  const dmGoal = params.dmType === "INITIAL_CONTACT" 
-    ? "相手のプロフィールに共感し、まずは挨拶と軽い接点を持つこと。売り込みは最小限にする。"
-    : "相手の活動（プロフィールや事業）に対して、無料診断という価値を提供できることを伝え、興味を持ってもらうこと。";
+  let dmGoal = "";
+  switch (params.dmType) {
+    case "INITIAL_CONTACT":
+      dmGoal = "相手のプロフィールに共感し、まずは挨拶と軽い接点を持つこと。売り込みは最小限にする。";
+      break;
+    case "FREE_DIAGNOSIS_OFFER":
+      dmGoal = "相手の活動（プロフィールや事業）に対して、無料診断という価値を提供できることを伝え、興味を持ってもらうこと。";
+      break;
+    case "PDF_SEND":
+      dmGoal = "作成済みの診断PDFを参考資料として共有すること。売り込みではなく「お役に立てる情報」として送り、「もしご興味があれば15分ほどで補足できます」と添える。";
+      break;
+    case "ZOOM_INVITE":
+      dmGoal = "診断結果の具体的な活用案を共有するため、15分程度のZoom相談へ誘導すること。いきなり成約を迫らず、価値提供の場として提案する。";
+      break;
+  }
 
   const prompt = `
 あなたはSNS営業のプロフェッショナルです。

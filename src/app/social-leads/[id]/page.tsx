@@ -98,6 +98,8 @@ export default async function SocialLeadDetailPage({
                   <select name="dmType" defaultValue={dmType || "INITIAL_CONTACT"} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border)" }}>
                     <option value="INITIAL_CONTACT">初回接触DM</option>
                     <option value="FREE_DIAGNOSIS_OFFER">無料診断誘導DM</option>
+                    <option value="PDF_SEND">PDF送付DM</option>
+                    <option value="ZOOM_INVITE">Zoom誘導DM</option>
                   </select>
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ height: "40px" }}>
@@ -132,9 +134,17 @@ export default async function SocialLeadDetailPage({
                 <div style={{ padding: "0.75rem", backgroundColor: "#fffbeb", border: "1px solid #fef3c7", borderRadius: "6px", fontSize: "0.8rem", color: "#92400e" }}>
                   <p style={{ margin: "0 0 0.5rem 0", fontWeight: "bold" }}>⚠️ ご注意・次のステップ</p>
                   <ul style={{ margin: 0, paddingLeft: "1.2rem" }}>
+                    {(dmType === "PDF_SEND" || dmType === "ZOOM_INVITE") && (
+                      <li style={{ color: "#c2410c", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                        PDF URL、添付ファイル、Zoom URL、日程調整リンクは自動では追加されません。送信前に手動で追記してください。
+                      </li>
+                    )}
                     <li>この文章をコピーして、SNS上で手動で送信してください。</li>
                     <li><strong>この画面から自動送信はされません。</strong> 内容は必ず確認・修正してください。</li>
-                    <li>送信後は、下の「接触履歴」フォームから <strong>DM_SENT</strong> として記録を残してください。</li>
+                    <li>送信後は、下の「接触履歴」フォームから <strong>{
+                      dmType === "PDF_SEND" ? "PDF_SENT" : 
+                      dmType === "ZOOM_INVITE" ? "ZOOM_INVITED" : "DM_SENT"
+                    }</strong> として記録を残してください。</li>
                   </ul>
                 </div>
               </div>
@@ -164,7 +174,11 @@ export default async function SocialLeadDetailPage({
                   <select 
                     name="type" 
                     required 
-                    defaultValue={generatedDm ? "DM_SENT" : "LIKE"}
+                    defaultValue={
+                      dmType === "PDF_SEND" ? "PDF_SENT" :
+                      dmType === "ZOOM_INVITE" ? "ZOOM_INVITED" :
+                      generatedDm ? "DM_SENT" : "LIKE"
+                    }
                     style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
                   >
                     <option value="LIKE">いいね済み</option>
