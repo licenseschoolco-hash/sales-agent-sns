@@ -17,6 +17,19 @@ const ALLOWED_STATUSES = [
   "ARCHIVED",
 ];
 
+// 許可された接触種別
+const ALLOWED_TOUCH_TYPES = [
+  "LIKE",
+  "COMMENT",
+  "FOLLOW",
+  "DM_SENT",
+  "DM_RECEIVED",
+  "PDF_SENT",
+  "ZOOM_INVITED",
+  "REPLIED",
+  "NOTE",
+];
+
 export async function createSocialLeadCandidate(formData: FormData) {
   const snsType = formData.get("snsType") as string;
   const url = formData.get("url") as string;
@@ -90,4 +103,37 @@ export async function createSocialLeadCandidate(formData: FormData) {
   }
 
   revalidatePath("/social-leads");
+}
+
+export async function createSocialTouchLog(formData: FormData) {
+  const socialLeadCandidateId = formData.get("socialLeadCandidateId") as string;
+  const type = formData.get("type") as string;
+  const content = formData.get("content") as string;
+  const ownedAccountName = formData.get("ownedAccountName") as string;
+
+  // 1. 必須チェック
+  if (!socialLeadCandidateId || !type) {
+    throw new Error("リードIDと接触種別は必須です。");
+  }
+
+  // 2. 種別バリデーション
+  if (!ALLOWED_TOUCH_TYPES.includes(type)) {
+    throw new Error("無効な接触種別です。");
+  }
+
+  try {
+    await prisma.socialTouchLog.create({
+      data: {
+        socialLeadCandidateId,
+        type,
+        content: content || null,
+        ownedAccountName: ownedAccountName || null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to create touch log:", error);
+    throw new Error("履歴の登録に失敗しました。");
+  }
+
+  revalidatePath(`/social-leads/${socialLeadCandidateId}`);
 }

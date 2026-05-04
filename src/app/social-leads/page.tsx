@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
 import { createSocialLeadCandidate } from "./actions";
+import Link from "next/link";
 
 export default async function SocialLeadsPage() {
   // データの取得
@@ -155,12 +156,13 @@ export default async function SocialLeadsPage() {
                 <th>診断タイプ</th>
                 <th>商材</th>
                 <th>更新日</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
               {leads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
                     登録されているSNSリードはありません
                   </td>
                 </tr>
@@ -210,6 +212,11 @@ export default async function SocialLeadsPage() {
                       <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
                         {new Date(lead.updatedAt).toLocaleDateString("ja-JP")}
                       </span>
+                    </td>
+                    <td>
+                      <Link href={`/social-leads/${lead.id}`} className="btn btn-sm btn-neutral">
+                        詳細
+                      </Link>
                     </td>
                   </tr>
                 ))
