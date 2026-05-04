@@ -15,7 +15,8 @@ export type DiagnosisType =
   | "dental_ai_phone"
   | "sales_os"
   | "website_conversion"
-  | "sns_account";
+  | "sns_account"
+  | "ai_secretary";
 
 export interface DiagnosisScoreConfig {
   key: DiagnosisScoreKey;
@@ -191,6 +192,58 @@ export const DIAGNOSIS_CONFIG: Record<DiagnosisType, DiagnosisTypeConfig> = {
     proposalTemplate: "「{weakItem}」を強化し、SNS運用を単なる発信から「自動集客装置」に変えるための具体的な導線設計をご提案可能です。",
     cta: "SNS商談化導線診断会（Zoom15分）",
     sendingMessageTemplate: "SNSを「頑張って発信」するステージから、安定して「商談が生まれる」ステージへ変えるための改善案をまとめました。",
+  },
+  ai_secretary: {
+    type: "ai_secretary",
+    title: "事務・バックオフィスDX診断レポート",
+    subtitle: "AI秘書による業務効率化とコア業務集中の可能性分析",
+    industry: "中小企業・士業・クリニック・B2B",
+    targetDescription: "経営者・事務責任者様",
+    scores: [
+      { 
+        key: "scoreJobClarity", 
+        label: "事務・ルーチン業務の可視化", 
+        advice: "定型的な事務作業を整理し、外出し（自動化）しやすい状態を整えることで、業務効率をさらに高められる可能性があります。" 
+      },
+      { 
+        key: "scoreAtmosphere", 
+        label: "問い合わせ対応の即時性", 
+        advice: "メールやフォーム等の一次対応を型化し、即時性を高めることは、顧客満足度の向上と機会損失の防止に繋がります。" 
+      },
+      { 
+        key: "scoreDailyRoutine", 
+        label: "業務の標準化・脱属人化", 
+        advice: "特定の担当者に依存しがちな業務をシステムで補完することで、チーム全体の生産性を安定させる余地があります。" 
+      },
+      { 
+        key: "scoreBeginnerSafety", 
+        label: "IT・デジタル活用状況", 
+        advice: "チャットツールやSaaSの活用をさらに進めることで、AI秘書との連携がスムーズになり、自動化の恩恵を受けやすくなります。" 
+      },
+      { 
+        key: "scoreApplicationFlow", 
+        label: "情報集約・管理体制", 
+        advice: "顧客情報やタスクを一元管理する体制を整えることは、情報の散乱を防ぎ、意思決定のスピードを早める一助となります。" 
+      },
+      { 
+        key: "scoreAppealPower", 
+        label: "AI導入による生産性向上余地", 
+        advice: "定型業務の一部をAIで補完することで、社長様や専門スタッフ様が本来のコア業務に集中できる時間が増える可能性があります。" 
+      },
+    ],
+    promptRole: "あなたは中小企業のバックオフィス改善とAI業務効率化に精通した業務改善コンサルタントです。",
+    promptFocus: "社長や専門スタッフの事務負担、問い合わせ対応の属人性、書類・タスク管理の遅延リスク、およびAI秘書による定型業務の補完可能性。",
+    expressionGuards: [
+      ...COMMON_EXPRESSION_GUARDS,
+      "「非効率」「遅い」「できていない」「管理不足」といった批判的な表現を避け、「改善の余地がある」「即時性を高められる可能性がある」と表現すること",
+      "「AIに置き換えるべき」「人を減らせる」とは言わず、「本来業務への集中を支援する補完策」として位置づけること",
+      "「AIで全て解決できる」という誇大表現を避け、業務棚卸しの重要性とセットで提案すること",
+      "事務スタッフの負担を責めず、仕組みによる解決を促す表現にすること"
+    ],
+    proposalProduct: "AI秘書",
+    proposalTemplate: "「{weakItem}」の改善に向けた一案として、一次対応や情報整理をサポートする『AI秘書』の導入が検討の余地があります。すべての業務を置き換えるのではなく、定型業務の一部をAIが補完することで、社長様やスタッフ様が本来の業務に集中しやすい体制を作れる可能性があります。",
+    cta: "AI秘書による業務工数削減シミュレーション（Zoom15分）",
+    sendingMessageTemplate: "業務の棚卸しと効率化のヒントとして、AI秘書による「事務・バックオフィスDX簡易診断結果」をまとめました。本来業務への集中に役立てていただければ幸いです。",
   },
 };
 
