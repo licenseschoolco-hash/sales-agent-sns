@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createSocialTouchLog } from "../actions";
+import { createSocialTouchLog, promoteSocialLeadToTarget } from "../actions";
 import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
 import { generateSocialDm, SocialDmType } from "@/lib/social-dm/generator";
 
@@ -287,6 +287,78 @@ export default async function SocialLeadDetailPage({
                 </div>
               )}
             </div>
+          </section>
+
+          {/* 昇格セクション */}
+          <section className="card" style={{ marginTop: "2rem", position: "sticky", top: "28rem" }}>
+            <h2 style={{ marginBottom: "1rem", fontSize: "1.1rem" }}>TargetCompany 昇格</h2>
+            
+            {lead.targetCompanyId ? (
+              <div style={{ padding: "1rem", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px" }}>
+                <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.875rem", color: "#166534", fontWeight: "bold" }}>
+                  ✅ TargetCompany 昇格済み
+                </p>
+                <Link 
+                  href={`/targets/${lead.targetCompanyId}`}
+                  className="btn btn-sm btn-neutral"
+                  style={{ width: "100%", textAlign: "center" }}
+                >
+                  企業詳細を開く
+                </Link>
+              </div>
+            ) : (
+              <form action={promoteSocialLeadToTarget}>
+                <input type="hidden" name="socialLeadCandidateId" value={lead.id} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem", fontSize: "0.875rem" }}>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.3rem", fontWeight: "600" }}>企業名 *</label>
+                    <input
+                      type="text"
+                      name="companyName"
+                      required
+                      defaultValue={lead.name || lead.handle || ""}
+                      placeholder="株式会社〇〇"
+                      style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.3rem", fontWeight: "600" }}>Webサイト URL</label>
+                    <input
+                      type="url"
+                      name="website"
+                      placeholder="https://example.com"
+                      style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
+                    />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.3rem", fontWeight: "600" }}>業界</label>
+                      <input
+                        type="text"
+                        name="industry"
+                        placeholder="IT, 製造など"
+                        style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.3rem", fontWeight: "600" }}>地域</label>
+                      <input
+                        type="text"
+                        name="region"
+                        placeholder="東京都など"
+                        style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
+                      />
+                    </div>
+                  </div>
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ marginTop: "0.5rem" }}>
+                    企業として登録・昇格
+                  </button>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+                    ※昇格すると、自動診断（RecruitmentReport）などが利用可能になります。
+                  </p>
+                </div>
+              </form>
+            )}
           </section>
         </div>
       </div>

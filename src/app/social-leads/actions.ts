@@ -137,3 +137,77 @@ export async function createSocialTouchLog(formData: FormData) {
 
   revalidatePath(`/social-leads/${socialLeadCandidateId}`);
 }
+export async function promoteSocialLeadToTarget(formData: FormData) {
+  const socialLeadCandidateId = formData.get("socialLeadCandidateId") as string;
+  const companyName = formData.get("companyName") as string;
+  const website = formData.get("website") as string;
+  const industry = formData.get("industry") as string;
+  const region = formData.get("region") as string;
+  const notes = formData.get("notes") as string;
+
+  if (!socialLeadCandidateId || !companyName) {
+    throw new Error("リードIDと企業名は必須です。");
+  }
+
+  // 1. リード情報の取得
+  const lead = await prisma.socialLeadCandidate.findUnique({
+    where: { id: socialLeadCandidateId },
+  });
+
+  if (!lead) {
+    throw new Error("リードが見つかりません。");
+  }
+
+  if (lead.targetCompanyId) {
+    throw new Error("このリードは既に昇格済みです。");
+  }
+
+  // 2. sourceType のマッピング
+  let sourceType = "other";
+  if (lead.snsType === "X") sourceType = "x";
+  else if (lead.snsType === "INSTAGRAM") sourceType = "instagram";
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // A. TargetCompany の作成
+      const company = await tx.targetCompany.create({
+        data: {
+          name: companyName,
+          website: website || null,
+          industry: industry || "未設定",
+          region: region || null,
+          notes: notes || lead.notes || null,
+          snsUrl: lead.url,
+          status: "new",
+          sourceStatus: "sns_only",
+        },
+      });
+
+      // B. InformationSource の作成
+      await tx.informationSource.create({
+        data: {
+          targetCompanyId: company.id,
+          sourceType,
+          label: "SNSプロフィール",
+          url: lead.url,
+          content: lead.profileText,
+          verificationStatus: "pending",
+        },
+      });
+
+      // C. SocialLeadCandidate の更新
+      await tx.socialLeadCandidate.update({
+        where: { id: socialLeadCandidateId },
+        data: {
+          targetCompanyId: company.id,
+          // status は変更しない
+        },
+      });
+    });
+
+    revalidatePath(`/social-leads/${socialLeadCandidateId}`);
+  } catch (error) {
+    console.error("Failed to promote social lead:", error);
+    throw new Error("昇格処理に失敗しました。");
+  }
+}
