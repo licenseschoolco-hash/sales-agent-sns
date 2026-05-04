@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import DiagnosisBarChart from "@/components/DiagnosisBarChart";
 
+import { getDiagnosisConfig } from "@/lib/recruitment-report/config";
+
 export default async function ReportViewPage({ params }: { params: Promise<{ id: string, reportId: string }> }) {
   const { id, reportId } = await params;
 
@@ -13,14 +15,14 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
 
   if (!report) notFound();
 
-  const chartItems = [
-    { label: '求人情報のわかりやすさ', score: report.scoreJobClarity },
-    { label: '職場の雰囲気', score: report.scoreAtmosphere },
-    { label: '1日の流れ', score: report.scoreDailyRoutine },
-    { label: '未経験者への安心材料', score: report.scoreBeginnerSafety },
-    { label: '応募導線', score: report.scoreApplicationFlow },
-    { label: '直接応募の訴求力', score: report.scoreAppealPower },
-  ];
+  // 診断タイプに応じた設定を取得
+  const config = getDiagnosisConfig(report.diagnosisType);
+
+  // チャート項目の生成 (DBのカラム値を config のラベルでマッピング)
+  const chartItems = config.scores.map(s => ({
+    label: s.label,
+    score: report[s.key as keyof typeof report] as number
+  }));
 
   return (
     <div className="container report-container">
@@ -94,8 +96,9 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
 
       <div className="report-header">
         <div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: '700', marginBottom: '0.25rem' }}>採用パートナー診断レポート</div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: '700', marginBottom: '0.25rem' }}>{config.title}</div>
           <h1 style={{ fontSize: '1.75rem', margin: 0 }}>{report.targetCompany.name} 様</h1>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{config.subtitle}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>総合評価スコア</div>
@@ -131,7 +134,7 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
 
         {/* 解決策の提案 */}
         <section className="card" style={{ padding: '2rem', background: '#f0f9ff', border: '1px solid #bae6fd' }}>
-          <div className="section-title" style={{ color: '#0369a1' }}>■ 次の一手：動画と視覚情報の活用</div>
+          <div className="section-title" style={{ color: '#0369a1' }}>■ 次の一手：{config.proposalProduct}の活用</div>
           <p style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap', margin: 0 }}>{report.proposalMessage}</p>
         </section>
 
@@ -145,7 +148,7 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
         </section>
 
         <section style={{ textAlign: 'center', padding: '2rem 0', borderTop: '1px solid #e2e8f0' }}>
-          <p style={{ fontWeight: '700', marginBottom: '1rem' }}>本診断の詳細解説や具体的な改善事例を、オンライン(Zoom)にて30分程度でご説明可能です。</p>
+          <p style={{ fontWeight: '700', marginBottom: '1rem' }}>{config.cta}</p>
           <div className="no-print" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             <div style={{ padding: '0.75rem 1.5rem', background: '#f1f5f9', borderRadius: '8px', fontSize: '0.875rem', color: '#475569', fontWeight: '600' }}>
               💡 ブラウザの印刷機能（Ctrl+P / Cmd+P）を使用してPDF保存してください
