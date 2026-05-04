@@ -21,12 +21,15 @@ export interface AiDiagnosisResult {
   sendingMessage: string;
 }
 
+import { getDiagnosisConfig, COMMON_EXPRESSION_GUARDS } from "./config";
+
 /**
- * AI API（Gemini）を使用して求人本文を解析する
+ * AI API（Gemini）を使用して本文を解析する
  */
 export async function analyzeRecruitmentText(
   companyName: string,
-  sourceText: string
+  sourceText: string,
+  diagnosisType?: string
 ): Promise<AiDiagnosisResult> {
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -34,33 +37,54 @@ export async function analyzeRecruitmentText(
     throw new Error("AI APIキーが未設定です。 .env ファイルに GEMINI_API_KEY を設定してください。");
   }
 
-  const prompt = `
-あなたは介護業界に精通した採用戦略コンサルタントです。
-以下の企業「${companyName}」の求人本文を分析し、採用導線の診断を行ってください。
+  // 診断設定の取得
+  const config = getDiagnosisConfig(diagnosisType);
+  
+  // ガードルールの統合（重複除去）
+  const allGuards = Array.from(new Set([...COMMON_EXPRESSION_GUARDS, ...config.expressionGuards]));
 
-【分析対象の求人本文】
+  // プロンプトの組み立て
+  const prompt = `
+あなたは${config.promptRole}
+${config.industry}における${config.title}（${config.subtitle}）を行い、診断レポートを作成してください。
+
+【対象企業】
+${companyName}
+
+【分析対象のテキスト】
 ${sourceText}
 
-【診断項目】
-1. 求人情報のわかりやすさ (jobClarity)
-2. 職場の雰囲気の伝わりやすさ (atmosphere)
-3. 1日の流れの見えやすさ (dailyRoutine)
-4. 未経験者への安心材料 (beginnerSafety)
-5. 応募導線のわかりやすさ (applicationFlow)
-6. 直接応募につながる訴求力 (appealPower)
+【診断項目と対応するJSONキー】
+AIは以下の項目（カッコ内はJSONのキー名）について診断を行ってください。
+${config.scores.map((s, i) => `${i + 1}. ${s.label} (${s.key})`).join("\n")}
+
+【分析の重点観点】
+${config.promptFocus}
+
+【診断の厳守ルール】
+${allGuards.map(g => `- ${g}`).join("\n")}
+- 提案商品: ${config.proposalProduct}
+- CTA: ${config.cta}
 
 【出力形式】
 必ず以下の構造の純粋なJSON形式で回答してください。他の文章は一切含めないでください。
 {
-  "scores": { "jobClarity": 10, "atmosphere": 8, ... },
-  "reasons": { "jobClarity": "判定理由", ... },
-  "suggestions": { "jobClarity": "具体的な改善案", ... },
-  "evidences": { "jobClarity": "本文内の根拠となる記述", ... },
+  "scores": {
+    "jobClarity": スコア(1-10),
+    "atmosphere": スコア(1-10),
+    "dailyRoutine": スコア(1-10),
+    "beginnerSafety": スコア(1-10),
+    "applicationFlow": スコア(1-10),
+    "appealPower": スコア(1-10)
+  },
+  "reasons": { "jobClarity": "判定理由", "atmosphere": "...", ... },
+  "suggestions": { "jobClarity": "具体的な改善案", "atmosphere": "...", ... },
+  "evidences": { "jobClarity": "本文内の根拠となる記述", "atmosphere": "...", ... },
   "totalScore": 総合点(100点満点),
-  "generalReview": "診断総評（介護業界の応募者心理に寄り添った文章）",
-  "improvementPoints": "改善ポイント（箇条書き）",
-  "proposalMessage": "AIアニメ動画を活用した解決策の自然な提案文",
-  "sendingMessage": "Zoom提案につながる送付用メッセージの雛形"
+  "generalReview": "診断総評（ターゲットの心理に寄り添い、${config.industry}の特性を考慮した文章）",
+  "improvementPoints": "最も重要な改善ポイント（3点程度、箇条書き）",
+  "proposalMessage": "${config.proposalProduct}を活用した具体的な解決策の提案文",
+  "sendingMessage": "Zoom提案や問い合わせにつながる送付用メッセージの雛形（CTA: ${config.cta} を含む）"
 }
   `.trim();
 

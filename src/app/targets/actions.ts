@@ -201,8 +201,8 @@ export async function runAiDiagnosis(targetCompanyId: string, formData: FormData
   const diagnosisType = config.type;
 
   if (!sourceText) throw new Error("求人本文を入力してください。");
-
-  const result = await analyzeRecruitmentText(companyName, sourceText);
+  // AI解析実行
+  const result = await analyzeRecruitmentText(companyName, sourceText, diagnosisType);
 
   // 下書きとして一時保存
   const report = await prisma.recruitmentReport.create({
