@@ -3,21 +3,37 @@ import { runAiDiagnosis, confirmAiReport } from "../../../actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import DiagnosisBarChart from "@/components/DiagnosisBarChart";
-
-import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
+import { DIAGNOSIS_CONFIG, getDiagnosisConfig } from "@/lib/recruitment-report/config";
 
 export default async function AiReportPage({ 
   params, 
   searchParams 
 }: { 
   params: Promise<{ id: string }>, 
-  searchParams: Promise<{ draftId?: string }> 
+  searchParams: Promise<{ draftId?: string, sourceId?: string, diagnosisType?: string }> 
 }) {
   const { id } = await params;
-  const { draftId } = await searchParams;
+  const { draftId, sourceId, diagnosisType: diagnosisTypeParam } = await searchParams;
   
-  const target = await prisma.targetCompany.findUnique({ where: { id } });
+  const target = await prisma.targetCompany.findUnique({ 
+    where: { id },
+    include: {
+      sources: { orderBy: { createdAt: 'desc' } }
+    }
+  });
   if (!target) notFound();
+
+  // 引用元の情報源をセキュアに取得 (現在のターゲットに属するもののみ)
+  const selectedSource = sourceId ? await prisma.informationSource.findFirst({
+    where: { 
+      id: sourceId,
+      targetCompanyId: id 
+    }
+  }) : null;
+
+  // 診断タイプの決定 (URLパラメータ優先、なければデフォルト)
+  const currentConfig = getDiagnosisConfig(diagnosisTypeParam);
+  const currentDiagnosisType = currentConfig.type;
 
   const products = await prisma.product.findMany({ where: { status: 'active' } });
   const apiKeySet = !!process.env.GEMINI_API_KEY;
@@ -43,6 +59,17 @@ export default async function AiReportPage({
     label: config.title
   }));
 
+  const sourceTypeLabels: Record<string, string> = {
+    official_site: '🌐 公式',
+    recruitment_page: '📄 採用',
+    job_portal: '📦 求人',
+    instagram: '📸 インスタ',
+    x: '🐦 X',
+    google_map: '📍 Map',
+    contact_form: '✉️ フォーム',
+    other: '🔗 その他',
+  };
+
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
@@ -50,7 +77,7 @@ export default async function AiReportPage({
           ← ターゲット詳細に戻る
         </Link>
         <h1>AI自動診断レポート生成</h1>
-        <p style={{ color: 'var(--text-muted)' }}>求人本文をAIが解析し、診断レポートの下書きを作成します。</p>
+        <p style={{ color: 'var(--text-muted)' }}>登録済みの情報源や手動貼り付け本文をAIが解析し、レポートの下書きを作成します。</p>
       </header>
 
       {!apiKeySet && (
@@ -65,7 +92,51 @@ export default async function AiReportPage({
       <div style={{ display: 'grid', gridTemplateColumns: draft ? '1fr 1fr' : '1fr', gap: '2rem' }}>
         {/* 入力エリア */}
         <section className="card">
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>解析用データ入力</h2>
+          <div style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>解析済み情報源から引用</h2>
+            {target.sources.length === 0 ? (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>情報源がまだ登録されていません。</p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                {target.sources.map(source => (
+                  <Link 
+                    key={source.id} 
+                    href={`/targets/${id}/reports/ai?sourceId=${source.id}&diagnosisType=${currentDiagnosisType}`}
+                    style={{ 
+                      display: 'block',
+                      padding: '0.75rem', 
+                      background: sourceId === source.id ? 'var(--primary-light)' : 'var(--bg-secondary)', 
+                      border: sourceId === source.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      width: 'calc(50% - 0.375rem)',
+                      minWidth: '200px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.875rem' }}>{source.label}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {sourceTypeLabels[source.sourceType] || source.sourceType}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ 
+                        fontSize: '0.7rem', 
+                        color: source.content ? 'var(--success)' : 'var(--text-muted)',
+                        fontWeight: '600'
+                      }}>
+                        {source.content ? '📄 本文あり' : '🚫 本文なし'}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '600' }}>引用する →</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>解析用データ入力</h2>
           <form action={handleAnalyze}>
             <input type="hidden" name="companyName" value={target.name} />
             
@@ -78,7 +149,7 @@ export default async function AiReportPage({
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>診断種別 (プロンプト切り替え)</label>
-              <select name="diagnosisType" required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <select name="diagnosisType" required defaultValue={currentDiagnosisType} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
                 {diagnosisTypeOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -97,9 +168,15 @@ export default async function AiReportPage({
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>求人本文 (必須)</label>
+              {sourceId && !selectedSource?.content && (
+                <p style={{ fontSize: '0.75rem', color: '#b91c1c', marginBottom: '0.5rem', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>
+                  ⚠️ 選択された情報源に本文が登録されていません。手動で入力するか、別の情報源を選択してください。
+                </p>
+              )}
               <textarea 
                 name="sourceText" 
                 required 
+                defaultValue={selectedSource?.content || ""}
                 placeholder="求人ページのテキストをここに貼り付けてください..."
                 style={{ width: '100%', height: '300px', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.875rem' }}
               ></textarea>
