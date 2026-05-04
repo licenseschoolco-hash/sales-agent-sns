@@ -32,8 +32,8 @@ export default async function AiReportPage({
   }) : null;
 
   // 診断タイプの決定 (URLパラメータ優先、なければデフォルト)
-  const currentConfig = getDiagnosisConfig(diagnosisTypeParam);
-  const currentDiagnosisType = currentConfig.type;
+  const currentDiagnosisType = diagnosisTypeParam || 'recruitment_video';
+  const currentConfig = getDiagnosisConfig(currentDiagnosisType);
 
   const products = await prisma.product.findMany({ where: { status: 'active' } });
   const apiKeySet = !!process.env.GEMINI_API_KEY;
