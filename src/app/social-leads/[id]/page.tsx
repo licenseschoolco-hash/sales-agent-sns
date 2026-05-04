@@ -147,10 +147,26 @@ export default async function SocialLeadDetailPage({
             {/* 登録フォーム */}
             <form action={createSocialTouchLog} style={{ marginBottom: "2rem", padding: "1rem", backgroundColor: "#f8fafc", borderRadius: "8px" }}>
               <input type="hidden" name="socialLeadCandidateId" value={lead.id} />
+              
+              {generatedDm && (
+                <div style={{ marginBottom: "1rem", padding: "0.75rem", backgroundColor: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: "6px", fontSize: "0.85rem", color: "#0369a1" }}>
+                  <strong>ℹ️ 下書きを引き継ぎました</strong><br />
+                  SNS公式画面で手動送信した後、内容を確認・修正してから履歴として保存してください。
+                  <div style={{ marginTop: "0.25rem", fontWeight: "bold", color: "#c2410c" }}>
+                    ※この画面からSNSへ自動送信はされません。
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.3rem", fontSize: "0.875rem", fontWeight: "600" }}>種別 *</label>
-                  <select name="type" required style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}>
+                  <select 
+                    name="type" 
+                    required 
+                    defaultValue={generatedDm ? "DM_SENT" : "LIKE"}
+                    style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
+                  >
                     <option value="LIKE">いいね済み</option>
                     <option value="COMMENT">コメント済み</option>
                     <option value="FOLLOW">フォロー済み</option>
@@ -168,6 +184,7 @@ export default async function SocialLeadDetailPage({
                     type="text"
                     name="ownedAccountName"
                     placeholder="自社アカウント名"
+                    defaultValue={lead.touchLogs[0]?.ownedAccountName || ""}
                     style={{ width: "100%", padding: "0.4rem", borderRadius: "4px", border: "1px solid var(--border)" }}
                   />
                 </div>
@@ -176,14 +193,15 @@ export default async function SocialLeadDetailPage({
                 <label style={{ display: "block", marginBottom: "0.3rem", fontSize: "0.875rem", fontWeight: "600" }}>内容/メモ</label>
                 <textarea
                   name="content"
-                  rows={2}
+                  rows={generatedDm ? 6 : 2}
+                  defaultValue={generatedDm}
                   placeholder="送信した内容やリンクなど"
                   style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border)" }}
                 ></textarea>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button type="submit" className="btn btn-primary btn-sm">
-                  履歴を記録する
+                  {generatedDm ? "DM送信記録を保存" : "履歴を記録する"}
                 </button>
               </div>
             </form>
