@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import DiagnosisBarChart from "@/components/DiagnosisBarChart";
 
+import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
+
 export default async function AiReportPage({ 
   params, 
   searchParams 
@@ -36,6 +38,11 @@ export default async function AiReportPage({
     if (draftId) await confirmAiReport(draftId, id);
   }
 
+  const diagnosisTypeOptions = Object.values(DIAGNOSIS_CONFIG).map(config => ({
+    value: config.type,
+    label: config.title
+  }));
+
   return (
     <div className="container">
       <header style={{ marginBottom: '2rem' }}>
@@ -63,9 +70,18 @@ export default async function AiReportPage({
             <input type="hidden" name="companyName" value={target.name} />
             
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>対象商材</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>対象商材 (連携用)</label>
               <select name="productId" required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>診断種別 (プロンプト切り替え)</label>
+              <select name="diagnosisType" required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                {diagnosisTypeOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
 

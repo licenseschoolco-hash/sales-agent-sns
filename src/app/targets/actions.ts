@@ -154,6 +154,7 @@ export async function saveLeadScore(targetCompanyId: string, productId: string, 
 }
 
 import { analyzeRecruitmentText } from "@/lib/recruitment-report/ai-analyzer";
+import { getDiagnosisConfig } from "@/lib/recruitment-report/config";
 
 export async function saveRecruitmentReport(targetCompanyId: string, formData: FormData) {
   const productId = formData.get("productId") as string;
@@ -194,6 +195,10 @@ export async function runAiDiagnosis(targetCompanyId: string, formData: FormData
   const companyName = formData.get("companyName") as string;
   const sourceText = formData.get("sourceText") as string;
   const diagnosisUrl = formData.get("diagnosisUrl") as string;
+  const diagnosisTypeRaw = formData.get("diagnosisType") as string;
+
+  const config = getDiagnosisConfig(diagnosisTypeRaw);
+  const diagnosisType = config.type;
 
   if (!sourceText) throw new Error("求人本文を入力してください。");
 
@@ -204,6 +209,7 @@ export async function runAiDiagnosis(targetCompanyId: string, formData: FormData
     data: {
       targetCompanyId,
       productId,
+      diagnosisType,
       sourceType: "ai",
       sourceText,
       diagnosisUrl,
