@@ -44,6 +44,7 @@ model Product {
   leadCandidates LeadCandidate[]
   searchQueries  ProductSearchQuery[]
   recruitmentReports RecruitmentReport[]
+  socialLeads    SocialLeadCandidate[]
 
   @@map("products")
 }
@@ -154,6 +155,7 @@ model TargetCompany {
   leadCandidate LeadCandidate?
   recruitmentReports RecruitmentReport[]
   sources       InformationSource[]
+  socialLeads   SocialLeadCandidate[]
 
   @@map("target_companies")
 }
@@ -449,4 +451,49 @@ model RecruitmentReport {
   product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("recruitment_reports")
+}
+
+// ============================================
+// SNS営業モジュール
+// ============================================
+
+/// SNS見込み客（SNSアカウント単位の管理）
+model SocialLeadCandidate {
+  id              String   @id @default(cuid())
+  snsType         String   @map("sns_type") // X, Instagram, etc.
+  handle          String?  // @アカウント名
+  url             String   @unique // プロフィールURL
+  name            String?  // 表示名
+  profileText     String?  @map("profile_text")
+  followerCount   Int?     @map("follower_count")
+  leadScore       Int      @default(1) @map("lead_score")
+  status          String   @default("NEW") // NEW, CONTACTED, REPLIED, APPOINTMENT_SET, ARCHIVED
+  diagnosisType   String?  @map("diagnosis_type") // recruitment_video, dental_ai_phone, etc.
+  
+  // リレーション
+  targetCompanyId String?  @map("target_company_id")
+  targetCompany   TargetCompany? @relation(fields: [targetCompanyId], references: [id], onDelete: SetNull)
+  productId       String?  @map("product_id")
+  product         Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  touchLogs       SocialTouchLog[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("social_lead_candidates")
+}
+
+/// SNS接触履歴
+model SocialTouchLog {
+  id                    String              @id @default(cuid())
+  socialLeadCandidateId String              @map("social_lead_candidate_id")
+  socialLeadCandidate   SocialLeadCandidate @relation(fields: [socialLeadCandidateId], references: [id], onDelete: Cascade)
+  
+  type                  String   // LIKE, COMMENT, FOLLOW, DM_SENT, DM_RECEIVED, PDF_SENT, ZOOM_INVITED, REPLIED, NOTE
+  content               String?  // メッセージ内容や対象投稿URL
+  ownedAccountName      String?  @map("owned_account_name") // 接触に使用した自社アカウント
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@map("social_touch_logs")
 }
