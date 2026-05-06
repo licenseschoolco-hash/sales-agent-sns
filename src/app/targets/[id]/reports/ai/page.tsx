@@ -35,6 +35,19 @@ export default async function AiReportPage({
   const currentDiagnosisType = diagnosisTypeParam || 'recruitment_video';
   const currentConfig = getDiagnosisConfig(currentDiagnosisType);
 
+  // SNSプロフィールの判定ロジック
+  const isSnsProfile = (source: { label: string, sourceType: string }) => 
+    source.label === "SNSプロフィール" && ["x", "instagram", "other"].includes(source.sourceType);
+
+  // 情報源のソート (SNSプロフィールを優先表示)
+  const sortedSources = [...target.sources].sort((a, b) => {
+    const isASns = isSnsProfile(a);
+    const isBSns = isSnsProfile(b);
+    if (isASns && !isBSns) return -1;
+    if (!isASns && isBSns) return 1;
+    return 0;
+  });
+
   const products = await prisma.product.findMany({ where: { status: 'active' } });
   const apiKeySet = !!process.env.GEMINI_API_KEY;
 
@@ -98,40 +111,52 @@ export default async function AiReportPage({
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>情報源がまだ登録されていません。</p>
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                {target.sources.map(source => (
-                  <Link 
-                    key={source.id} 
-                    href={`/targets/${id}/reports/ai?sourceId=${source.id}&diagnosisType=${currentDiagnosisType}`}
-                    style={{ 
-                      display: 'block',
-                      padding: '0.75rem', 
-                      background: sourceId === source.id ? 'var(--primary-light)' : 'var(--bg-secondary)', 
-                      border: sourceId === source.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                      borderRadius: '8px',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                      width: 'calc(50% - 0.375rem)',
-                      minWidth: '200px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span style={{ fontWeight: '700', fontSize: '0.875rem' }}>{source.label}</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {sourceTypeLabels[source.sourceType] || source.sourceType}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ 
-                        fontSize: '0.7rem', 
-                        color: source.content ? 'var(--success)' : 'var(--text-muted)',
-                        fontWeight: '600'
-                      }}>
-                        {source.content ? '📄 本文あり' : '🚫 本文なし'}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '600' }}>引用する →</span>
-                    </div>
-                  </Link>
-                ))}
+                {sortedSources.map(source => {
+                  const isSns = isSnsProfile(source);
+                  return (
+                    <Link 
+                      key={source.id} 
+                      href={`/targets/${id}/reports/ai?sourceId=${source.id}&diagnosisType=${currentDiagnosisType}`}
+                      style={{ 
+                        display: 'block',
+                        padding: '0.75rem', 
+                        background: sourceId === source.id ? 'var(--primary-light)' : 'var(--bg-secondary)', 
+                        border: sourceId === source.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        width: 'calc(50% - 0.375rem)',
+                        minWidth: '200px'
+                      }}
+                    >
+                      {isSns && (
+                        <div style={{ marginBottom: '0.25rem' }}>
+                          <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                            SNSプロフィール情報
+                          </span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ fontWeight: '700', fontSize: '0.875rem' }}>{source.label}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {sourceTypeLabels[source.sourceType] || source.sourceType}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ 
+                          fontSize: '0.7rem', 
+                          color: source.content ? 'var(--success)' : 'var(--text-muted)',
+                          fontWeight: '600'
+                        }}>
+                          {source.content ? '📄 本文あり' : '🚫 本文なし'}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '600' }}>
+                          {isSns ? 'このSNSプロフィールを診断に使う →' : '引用する →'}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -168,6 +193,22 @@ export default async function AiReportPage({
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>求人本文 (必須)</label>
+              
+              {selectedSource && isSnsProfile(selectedSource) && (
+                <div style={{ 
+                  marginBottom: '1rem', 
+                  padding: '0.75rem', 
+                  background: '#eff6ff', 
+                  color: '#1d4ed8', 
+                  borderRadius: '8px', 
+                  fontSize: '0.85rem', 
+                  border: '1px solid #bfdbfe',
+                  lineHeight: '1.5'
+                }}>
+                  ※SNSプロフィール情報に基づいた診断を行います。より精度の高い診断には、公式サイトや求人ページの本文も併せて引用することをおすすめします。
+                </div>
+              )}
+
               {sourceId && !selectedSource?.content && (
                 <p style={{ fontSize: '0.75rem', color: '#b91c1c', marginBottom: '0.5rem', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>
                   ⚠️ 選択された情報源に本文が登録されていません。手動で入力するか、別の情報源を選択してください。
