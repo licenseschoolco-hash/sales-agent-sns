@@ -77,7 +77,43 @@ export default async function SocialSalesDashboard({
     };
   }).sort((a, b) => b.count - a.count);
 
-  // 5. 最近の活動
+  // 5. 営業成果（Appointment）の集計 (期間内 & SNS経由のみ)
+  const appointmentsInRange = await prisma.appointment.findMany({
+    where: {
+      createdAt: startDate ? { gte: startDate } : undefined,
+      targetCompany: {
+        socialLeads: { some: {} } // SNSリード経由の企業のみに絞り込み
+      }
+    },
+    include: {
+      targetCompany: {
+        select: { id: true, name: true, status: true }
+      }
+    }
+  });
+
+  const appoCount = appointmentsInRange.filter(a => a.scheduledAt !== null).length;
+  const wonTargetIds = new Set(appointmentsInRange.filter(a => a.outcome === "won").map(a => a.targetCompanyId));
+  const lostTargetIds = new Set(appointmentsInRange.filter(a => a.outcome === "lost").map(a => a.targetCompanyId));
+  const wonCount = wonTargetIds.size;
+  const lostCount = lostTargetIds.size;
+  const totalAmount = appointmentsInRange.filter(a => a.outcome === "won").reduce((sum, a) => sum + (a.amount || 0), 0);
+  const avgAmount = wonCount > 0 ? totalAmount / wonCount : 0;
+  
+  const winRate = appoCount > 0 ? (wonCount / appoCount) * 100 : 0;
+  const appoRate = totalLeads > 0 ? (appoCount / totalLeads) * 100 : 0;
+  const lostRate = appoCount > 0 ? (lostCount / appoCount) * 100 : 0;
+
+  // Overdue (次回対応予定日が過ぎている & 未成約/未失注)
+  const overdueApps = appointmentsInRange.filter(a => 
+    a.nextFollowUpDate && 
+    a.nextFollowUpDate < now && 
+    a.outcome !== "won" && 
+    a.outcome !== "lost" &&
+    !["won", "lost", "ng"].includes(a.targetCompany.status)
+  );
+
+  // 6. 最近の活動
   const recentLogs = await prisma.socialTouchLog.findMany({
     take: 10,
     orderBy: { createdAt: "desc" },
@@ -100,6 +136,10 @@ export default async function SocialSalesDashboard({
     insights.push({ type: 'note', label: 'ℹ️ 参考値', text: 'リード数が少ないため、各率は参考値として扱ってください。' });
   }
 
+  if (overdueApps.length > 0) {
+    insights.push({ type: 'warning', label: '⚠️ 要対応', text: `次回対応予定日を過ぎている商談が ${overdueApps.length} 件あります。詳細を確認して追撃を行ってください。` });
+  }
+
   // アプローチ (DM送信)
   if (totalLeads >= 5 && dmSentRate < 0.5) {
     insights.push({ type: 'warning', label: '⚠️ 要確認', text: '未接触リードが残っている可能性があります。優先的に初回DMを送る対象を確認してください。' });
@@ -120,6 +160,13 @@ export default async function SocialSalesDashboard({
   // 全体 (昇格)
   if (totalLeads >= 10 && promotionRate < 0.05) {
     insights.push({ type: 'warning', label: '⚠️ 要確認', text: 'SNSリードからTargetCompanyへの昇格率が低めに見えます。リード選定基準や昇格タイミングを見直す余地があります。' });
+  }
+
+  // 成約
+  if (appoCount >= 3 && winRate < 20) {
+    insights.push({ type: 'info', label: '💡 改善候補', text: '商談からの成約率が低めです。提案内容やクロージング手法の振り返り、または商談前のリード質を確認してください。' });
+  } else if (winRate >= 40 && appoCount >= 3) {
+    insights.push({ type: 'success', label: '✅ 好調', text: '商談からの成約率が非常に高いです。アプローチ数を増やすことで、さらに売上を伸ばせる可能性があります。' });
   }
 
   // 診断タイプ・商品注目候補
@@ -147,17 +194,26 @@ export default async function SocialSalesDashboard({
         </nav>
       </header>
 
-      {/* KPIカード */}
+      {/* 1. 基本KPIカード */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
         <KpiCard title="SNSリード総数" value={totalLeads} unit="件" subtitle="累計" />
         <KpiCard title="期間内新規リード" value={newLeadsCount} unit="件" color="var(--primary)" />
         <KpiCard title="DM送信数" value={dmSentCount} unit="件" />
-        <KpiCard title="返信数" value={repliedCount} unit="件" color="var(--success)" />
         <KpiCard title="Zoom打診数" value={zoomInvitedCount} unit="件" />
         <KpiCard title="昇格数" value={promotedLeadsCount} unit="件" subtitle={`昇格率: ${promotionRate > 0 ? (promotionRate * 100).toFixed(1) : 0}%`} color="var(--primary)" />
       </section>
 
-      {/* 改善アクションセクション */}
+      {/* 2. 営業成果セクション (追加) */}
+      <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem" }}>💰 営業成果（SNS経由）</h2>
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
+        <KpiCard title="アポ数" value={appoCount} unit="件" subtitle={`商談化率: ${appoRate.toFixed(1)}%`} color="#fbbf24" />
+        <KpiCard title="成約数" value={wonCount} unit="件" subtitle={`成約率: ${winRate.toFixed(1)}%`} color="var(--success)" />
+        <KpiCard title="失注数" value={lostCount} unit="件" subtitle={`失注率: ${lostRate.toFixed(1)}%`} color="#ef4444" />
+        <KpiCard title="受注金額合計" value={totalAmount} unit="円" subtitle={`平均: ¥${Math.round(avgAmount).toLocaleString()}`} color="var(--success)" />
+        <KpiCard title="次回対応漏れ" value={overdueApps.length} unit="件" color={overdueApps.length > 0 ? "#ef4444" : "var(--text-muted)"} />
+      </section>
+
+      {/* 3. 改善アクションセクション */}
       <section className="card" style={{ marginBottom: "2rem", border: "2px solid #e2e8f0" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span>💡</span> 改善アクション・ボトルネック分析
@@ -200,7 +256,8 @@ export default async function SocialSalesDashboard({
               <FunnelRow label="DM送信" value={dmSentCount} total={totalLeads} color="#60a5fa" rateLabel={`送信率: ${(dmSentRate * 100).toFixed(1)}%`} />
               <FunnelRow label="PDF送付" value={pdfSentCount} total={totalLeads} color="#34d399" rateLabel={`PDF送付率: ${(pdfSentRate * 100).toFixed(1)}% (対DM)`} />
               <FunnelRow label="Zoom打診" value={zoomInvitedCount} total={totalLeads} color="#fbbf24" rateLabel={`誘導率: ${(zoomInviteRate * 100).toFixed(1)}% (対PDF)`} />
-              <FunnelRow label="企業昇格" value={promotedLeadsCount} total={totalLeads} color="var(--primary)" rateLabel={`昇格率: ${(promotionRate * 100).toFixed(1)}%`} />
+              <FunnelRow label="アポ確定" value={appoCount} total={totalLeads} color="#f59e0b" rateLabel={`商談化率: ${appoRate.toFixed(1)}%`} />
+              <FunnelRow label="成約(受注)" value={wonCount} total={totalLeads} color="var(--success)" rateLabel={`成約率: ${winRate.toFixed(1)}% (対アポ)`} />
             </div>
           </section>
 
@@ -234,41 +291,48 @@ export default async function SocialSalesDashboard({
             </table>
           </section>
 
-          {/* 商品別テーブル */}
+          {/* 最近の商談履歴 (追加) */}
           <section className="card">
-            <h2 style={{ fontSize: "1.25rem", marginBottom: "1.5rem" }}>商品別パフォーマンス</h2>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
-                  <th style={{ padding: "0.75rem", fontSize: "0.875rem" }}>商品名</th>
-                  <th style={{ padding: "0.75rem", fontSize: "0.875rem", textAlign: "right" }}>リード数</th>
-                  <th style={{ padding: "0.75rem", fontSize: "0.875rem", textAlign: "right" }}>昇格数</th>
-                  <th style={{ padding: "0.75rem", fontSize: "0.875rem", textAlign: "right" }}>昇格率</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productStats.map(stat => (
-                  <tr key={stat.name} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "0.75rem", fontSize: "0.875rem", fontWeight: "600" }}>
-                      {stat.name}
-                      {stat.count < 3 && <span style={{ marginLeft: "0.5rem", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "normal" }}>(参考値)</span>}
-                    </td>
-                    <td style={{ padding: "0.75rem", fontSize: "0.875rem", textAlign: "right" }}>{stat.count} <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>件</span></td>
-                    <td style={{ padding: "0.75rem", fontSize: "0.875rem", textAlign: "right" }}>{stat.promoted} <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>件</span></td>
-                    <td style={{ padding: "0.75rem", fontSize: "0.875rem", textAlign: "right", fontWeight: "700", color: stat.rate > 20 && stat.count >= 3 ? "var(--success)" : "inherit" }}>
-                      {stat.rate.toFixed(1)}%
-                    </td>
-                  </tr>
+            <h2 style={{ fontSize: "1.25rem", marginBottom: "1.5rem" }}>🕒 最近の商談・営業履歴</h2>
+            {appointmentsInRange.length === 0 ? (
+              <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>対象期間内の商談履歴はありません。</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {appointmentsInRange.slice(0, 5).map(app => (
+                  <div key={app.id} style={{ padding: "0.75rem", border: "1px solid var(--border-light)", borderRadius: "8px", background: "white" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                      <Link href={`/targets/${app.targetCompanyId}`} style={{ fontWeight: "700", color: "var(--primary)", textDecoration: "none" }}>
+                        {app.targetCompany.name}
+                      </Link>
+                      <span style={{ 
+                        fontSize: "0.65rem", 
+                        fontWeight: "800", 
+                        padding: "0.1rem 0.4rem", 
+                        borderRadius: "4px",
+                        background: app.outcome === "won" ? "#dcfce7" : app.outcome === "lost" ? "#fee2e2" : "#f1f5f9",
+                        color: app.outcome === "won" ? "#166534" : app.outcome === "lost" ? "#991b1b" : "#475569"
+                      }}>
+                        {app.outcome.toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-dark)", marginBottom: "0.4rem" }}>
+                      {app.memo ? (app.memo.length > 60 ? `${app.memo.substring(0, 60)}...` : app.memo) : "メモなし"}
+                    </div>
+                    <div style={{ display: "flex", gap: "1rem", fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                      <span>📅 {new Date(app.createdAt).toLocaleDateString("ja-JP")}</span>
+                      {app.amount && <span>💰 ¥{app.amount.toLocaleString()}</span>}
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </section>
         </div>
 
-        {/* 最近の活動 */}
+        {/* 最近の活動ログ */}
         <aside>
           <section className="card" style={{ height: "100%" }}>
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "1.5rem" }}>最近の活動</h2>
+            <h2 style={{ fontSize: "1.1rem", marginBottom: "1.5rem" }}>最近のSNS活動</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               {recentLogs.map(log => (
                 <div key={log.id} style={{ padding: "0.75rem", borderLeft: "3px solid var(--primary)", background: "#f8fafc", borderRadius: "0 4px 4px 0" }}>
