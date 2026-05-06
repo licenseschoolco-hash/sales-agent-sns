@@ -298,13 +298,28 @@ export default async function SocialLeadDetailPage({
                 <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.875rem", color: "#166534", fontWeight: "bold" }}>
                   ✅ TargetCompany 昇格済み
                 </p>
-                <Link 
-                  href={`/targets/${lead.targetCompanyId}`}
-                  className="btn btn-sm btn-neutral"
-                  style={{ width: "100%", textAlign: "center" }}
-                >
-                  企業詳細を開く
-                </Link>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <Link 
+                    href={`/targets/${lead.targetCompanyId}`}
+                    className="btn btn-sm btn-neutral"
+                    style={{ width: "100%", textAlign: "center" }}
+                  >
+                    企業詳細を開く
+                  </Link>
+
+                  <div style={{ marginTop: "0.5rem", borderTop: "1px solid #bbf7d0", paddingTop: "1rem" }}>
+                    <p style={{ margin: "0 0 0.75rem 0", fontSize: "0.8rem", color: "#166534", lineHeight: "1.4" }}>
+                      昇格先の企業情報とSNSプロフィール情報を使って、商材別AI診断を作成できます。
+                    </p>
+                    <Link 
+                      href={`/targets/${lead.targetCompanyId}/reports/ai${lead.diagnosisType ? `?diagnosisType=${lead.diagnosisType}` : ""}`}
+                      className="btn btn-sm btn-primary"
+                      style={{ width: "100%", textAlign: "center" }}
+                    >
+                      AI診断へ進む
+                    </Link>
+                  </div>
+                </div>
               </div>
             ) : (
               <form action={promoteSocialLeadToTarget}>
