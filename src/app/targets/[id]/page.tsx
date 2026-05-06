@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deleteTarget } from "../actions";
+import { deleteTarget, updateTargetSalesStatus } from "../actions";
 
 export default async function TargetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,7 +18,7 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
         select: { id: true }
       },
       replies: { orderBy: { repliedAt: 'desc' }, take: 1 },
-      appointments: { orderBy: { createdAt: 'desc' }, take: 1 },
+      appointments: { orderBy: { createdAt: 'desc' }, take: 10 },
       recruitmentReports: { orderBy: { createdAt: 'desc' } },
       sources: { orderBy: { createdAt: 'desc' } }
     }
@@ -27,6 +27,7 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
   if (!target) notFound();
 
   const deleteTargetWithId = deleteTarget.bind(null, id);
+  const updateTargetSalesStatusWithId = updateTargetSalesStatus.bind(null, id);
 
   const statuses: Record<string, string> = {
     new: '新規リード',
@@ -338,10 +339,90 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>備考 / メモ</h3>
             <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{target.notes || '備考はありません。'}</p>
           </section>
+
+          {/* 営業履歴 (Appointment) */}
+          <section className="card">
+            <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>営業履歴・商談メモ</h3>
+            {target.appointments.length === 0 ? (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', padding: '1rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                営業履歴はまだありません。
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {target.appointments.map(app => (
+                  <div key={app.id} style={{ padding: '1rem', border: '1px solid var(--border-light)', borderRadius: '8px', background: app.outcome === 'won' ? '#f0fdf4' : 'white' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        fontWeight: '700', 
+                        padding: '0.125rem 0.5rem', 
+                        borderRadius: '4px',
+                        background: app.outcome === 'won' ? '#166534' : app.outcome === 'lost' ? '#991b1b' : '#e2e8f0',
+                        color: app.outcome === 'won' || app.outcome === 'lost' ? 'white' : 'inherit'
+                      }}>
+                        {app.outcome}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {new Date(app.createdAt).toLocaleString('ja-JP')}
+                      </span>
+                    </div>
+                    {app.memo && <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem 0', whiteSpace: 'pre-wrap' }}>{app.memo}</p>}
+                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {app.scheduledAt && <span>📅 アポ日: {new Date(app.scheduledAt).toLocaleDateString('ja-JP')}</span>}
+                      {app.nextFollowUpDate && <span>🔔 次回対応: {new Date(app.nextFollowUpDate).toLocaleDateString('ja-JP')}</span>}
+                      {app.amount && <span>💰 金額: ¥{app.amount.toLocaleString()}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* サイドバー：関連情報 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* クイック営業管理パネル */}
+          <section className="card" style={{ border: '2px solid var(--primary-light)' }}>
+            <h3 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>⚡ クイック営業管理</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              現在の営業状態と次回対応を記録します。履歴はAppointmentとして保存されます。
+            </p>
+            <form action={updateTargetSalesStatusWithId} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>営業ステータス *</label>
+                <select name="status" defaultValue={target.status} className="input" style={{ width: '100%', padding: '0.4rem' }} required>
+                  {Object.entries(statuses).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>次回対応予定日</label>
+                <input type="date" name="nextFollowUpDate" className="input" style={{ width: '100%', padding: '0.4rem' }} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>アポ・商談予定日時</label>
+                <input type="datetime-local" name="scheduledAt" className="input" style={{ width: '100%', padding: '0.4rem' }} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>見込/成約金額 (円)</label>
+                <input type="number" name="amount" placeholder="例: 500000" className="input" style={{ width: '100%', padding: '0.4rem' }} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>商談メモ</label>
+                <textarea name="memo" placeholder="商談内容や課題などを入力..." className="input" style={{ width: '100%', padding: '0.4rem', height: '80px', resize: 'vertical' }}></textarea>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+                営業情報を保存
+              </button>
+            </form>
+          </section>
+
           <section className="card">
             <h3 style={{ marginBottom: '1rem' }}>SNSアカウント</h3>
             {target.accounts.length === 0 ? (

@@ -349,3 +349,41 @@ export async function updateTargetSourceStatus(targetCompanyId: string, formData
   revalidatePath(`/targets/${targetCompanyId}`);
   revalidatePath(`/targets/${targetCompanyId}/sources`);
 }
+
+export async function updateTargetSalesStatus(targetCompanyId: string, formData: FormData) {
+  const status = formData.get("status") as string;
+  const nextFollowUpDateStr = formData.get("nextFollowUpDate") as string;
+  const scheduledAtStr = formData.get("scheduledAt") as string;
+  const amountStr = formData.get("amount") as string;
+  const memo = formData.get("memo") as string;
+
+  const nextFollowUpDate = nextFollowUpDateStr ? new Date(nextFollowUpDateStr) : null;
+  const scheduledAt = scheduledAtStr ? new Date(scheduledAtStr) : null;
+  const amount = amountStr ? parseInt(amountStr, 10) : null;
+
+  // status に基づいて outcome を決定
+  let outcome = "pending";
+  if (status === "won") outcome = "won";
+  else if (status === "lost") outcome = "lost";
+  else if (status === "appointment") outcome = "appointment_set";
+
+  // 1. TargetCompany のステータスを更新
+  await prisma.targetCompany.update({
+    where: { id: targetCompanyId },
+    data: { status },
+  });
+
+  // 2. Appointment 履歴を作成
+  await prisma.appointment.create({
+    data: {
+      targetCompanyId,
+      outcome,
+      scheduledAt,
+      amount,
+      memo,
+      nextFollowUpDate,
+    },
+  });
+
+  revalidatePath(`/targets/${targetCompanyId}`);
+}
