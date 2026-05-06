@@ -18,6 +18,11 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
   // 診断タイプに応じた設定を取得
   const config = getDiagnosisConfig(report.diagnosisType);
 
+  // 関連する SNS リードを検索
+  const socialLead = await prisma.socialLeadCandidate.findFirst({
+    where: { targetCompanyId: id }
+  });
+
   // チャート項目の生成 (DBのカラム値を config のラベルでマッピング)
   const chartItems = config.scores.map(s => ({
     label: s.label,
@@ -149,11 +154,32 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
 
         <section style={{ textAlign: 'center', padding: '2rem 0', borderTop: '1px solid #e2e8f0' }}>
           <p style={{ fontWeight: '700', marginBottom: '1rem' }}>{config.cta}</p>
-          <div className="no-print" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+          <div className="no-print" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <div style={{ padding: '0.75rem 1.5rem', background: '#f1f5f9', borderRadius: '8px', fontSize: '0.875rem', color: '#475569', fontWeight: '600' }}>
               💡 ブラウザの印刷機能（Ctrl+P / Cmd+P）を使用してPDF保存してください
             </div>
-            <Link href={`/targets/${id}`} className="btn" style={{ border: '1px solid var(--border)' }}>ターゲット詳細に戻る</Link>
+            
+            {socialLead && (
+              <div style={{ padding: '1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', maxWidth: '500px', width: '100%' }}>
+                <div style={{ fontSize: '0.875rem', color: '#166534', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  このレポートをSNSリードへ送る
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.75rem' }}>
+                  関連するSNSリード詳細へ戻り、PDF送付DMを作成できます。
+                </p>
+                <Link 
+                  href={`/social-leads/${socialLead.id}?fromReportId=${report.id}`} 
+                  className="btn btn-primary"
+                  style={{ display: 'inline-block', width: '100%', textAlign: 'center' }}
+                >
+                  SNSリード詳細でPDF送付DMを作成する
+                </Link>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <Link href={`/targets/${id}`} className="btn" style={{ border: '1px solid var(--border)' }}>ターゲット詳細に戻る</Link>
+            </div>
           </div>
         </section>
       </div>

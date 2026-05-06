@@ -10,10 +10,10 @@ export default async function SocialLeadDetailPage({
   searchParams 
 }: { 
   params: Promise<{ id: string }>,
-  searchParams: Promise<{ dmType?: string; generateDm?: string }>
+  searchParams: Promise<{ dmType?: string; generateDm?: string; fromReportId?: string }>
 }) {
   const { id } = await params;
-  const { dmType: rawDmType, generateDm } = await searchParams;
+  const { dmType: rawDmType, generateDm, fromReportId } = await searchParams;
   const dmType = rawDmType as SocialDmType | undefined;
   const shouldGenerate = generateDm === "1" && dmType;
 
@@ -83,6 +83,36 @@ export default async function SocialLeadDetailPage({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: "2rem" }}>
         {/* 左側：DM作成支援と接触履歴 */}
         <div>
+          {/* 診断レポート送付案内パネル */}
+          {fromReportId && (
+            <div style={{ padding: "1.25rem", backgroundColor: "#fffbeb", border: "1px solid #fcd34d", borderRadius: "8px", marginBottom: "1.5rem" }}>
+              <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem", color: "#92400e", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>📋</span> 診断レポート送付用の案内
+              </h3>
+              <p style={{ fontSize: "0.875rem", margin: "0 0 0.75rem 0", color: "#92400e" }}>
+                以下のレポートURLをコピーし、PDF送付DMの本文に手動で貼り付けてください。
+              </p>
+              <div style={{ 
+                padding: "0.75rem", 
+                backgroundColor: "#fff", 
+                border: "1px solid #e2e8f0", 
+                borderRadius: "4px", 
+                fontSize: "0.9rem", 
+                fontFamily: "monospace", 
+                marginBottom: "0.75rem", 
+                wordBreak: "break-all",
+                color: "var(--primary)",
+                fontWeight: "600"
+              }}>
+                {`/targets/${lead.targetCompanyId}/reports/${fromReportId}`}
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#c2410c", fontWeight: "bold", margin: 0, lineHeight: "1.5" }}>
+                ※この画面からPDFやDMは自動送信されません。送信前に必ず内容とURLを確認してください。<br />
+                ※DM種別で「PDF送付DM」を選択して下書きを生成してください。
+              </p>
+            </div>
+          )}
+
           {/* DM作成支援セクション */}
           <section className="card" style={{ marginBottom: "2rem", border: "2px solid var(--primary-light)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
