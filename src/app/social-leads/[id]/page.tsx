@@ -1,21 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createSocialTouchLog, promoteSocialLeadToTarget } from "../actions";
+import { createSocialTouchLog, promoteSocialLeadToTarget, generateSocialDmAction } from "../actions";
 import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
-import { generateSocialDm, SocialDmType } from "@/lib/social-dm/generator";
 
 export default async function SocialLeadDetailPage({ 
   params,
   searchParams 
 }: { 
   params: Promise<{ id: string }>,
-  searchParams: Promise<{ dmType?: string; generateDm?: string; fromReportId?: string }>
+  searchParams: Promise<{ dmType?: string; generatedText?: string; dmError?: string; fromReportId?: string }>
 }) {
   const { id } = await params;
-  const { dmType: rawDmType, generateDm, fromReportId } = await searchParams;
-  const dmType = rawDmType as SocialDmType | undefined;
-  const shouldGenerate = generateDm === "1" && dmType;
+  const { dmType, generatedText, dmError, fromReportId } = await searchParams;
 
   // データの取得
   const lead = await prisma.socialLeadCandidate.findUnique({
@@ -34,23 +31,8 @@ export default async function SocialLeadDetailPage({
     notFound();
   }
 
-  // DM下書きの生成（リクエストがある場合のみ）
-  let generatedDm = "";
-  if (shouldGenerate && dmType) {
-    const pastLogs = lead.touchLogs.slice(0, 5).map(log => `[${log.type}] ${log.content}`);
-    generatedDm = await generateSocialDm({
-      leadId: lead.id,
-      name: lead.name,
-      handle: lead.handle,
-      snsType: lead.snsType,
-      profileText: lead.profileText,
-      diagnosisType: lead.diagnosisType,
-      productName: lead.product?.name || null,
-      notes: lead.notes,
-      dmType,
-      pastLogs,
-    });
-  }
+  // DM生成結果の取得（Server Action経由で生成された結果をsearchParamsから読み取る）
+  const generatedDm = generatedText || "";
 
   return (
     <div className="container">
@@ -120,8 +102,9 @@ export default async function SocialLeadDetailPage({
               <h2 style={{ margin: 0, fontSize: "1.25rem" }}>DM作成支援 (AI)</h2>
             </div>
 
-            <form method="GET" style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#f8fafc", borderRadius: "8px" }}>
-              <input type="hidden" name="generateDm" value="1" />
+            <form action={generateSocialDmAction} style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#f8fafc", borderRadius: "8px" }}>
+              <input type="hidden" name="socialLeadCandidateId" value={lead.id} />
+              {fromReportId && <input type="hidden" name="fromReportId" value={fromReportId} />}
               <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: "block", marginBottom: "0.3rem", fontSize: "0.875rem", fontWeight: "600" }}>DM種別を選択</label>
@@ -140,6 +123,14 @@ export default async function SocialLeadDetailPage({
                 ※生成には数秒かかります。ページが再読み込みされます。
               </p>
             </form>
+
+            {dmError && (
+              <div style={{ padding: "1rem", backgroundColor: "#fee2e2", border: "1px solid #fecaca", borderRadius: "8px", marginBottom: "1rem" }}>
+                <p style={{ margin: 0, fontSize: "0.875rem", color: "#b91c1c", fontWeight: "600" }}>
+                  ⚠️ DM生成に失敗しました。時間をおいて再度お試しください。
+                </p>
+              </div>
+            )}
 
             {generatedDm && (
               <div style={{ padding: "1rem", backgroundColor: "#fff", border: "1px solid var(--primary-light)", borderRadius: "8px" }}>

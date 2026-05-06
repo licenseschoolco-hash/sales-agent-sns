@@ -137,6 +137,73 @@ export async function createSocialTouchLog(formData: FormData) {
 
   revalidatePath(`/social-leads/${socialLeadCandidateId}`);
 }
+// ============================================
+// DM生成（AI）- Server Action
+// ページレンダリングから分離し、明示操作でのみ実行する
+// ============================================
+
+import { generateSocialDm, SocialDmType } from "@/lib/social-dm/generator";
+import { redirect } from "next/navigation";
+
+export async function generateSocialDmAction(formData: FormData) {
+  const socialLeadCandidateId = formData.get("socialLeadCandidateId") as string;
+  const dmType = formData.get("dmType") as string;
+  const fromReportId = formData.get("fromReportId") as string;
+
+  if (!socialLeadCandidateId || !dmType) {
+    throw new Error("リードIDとDM種別は必須です。");
+  }
+
+  // リード情報の取得
+  const lead = await prisma.socialLeadCandidate.findUnique({
+    where: { id: socialLeadCandidateId },
+    include: {
+      product: true,
+      touchLogs: { orderBy: { createdAt: "desc" }, take: 5 },
+    },
+  });
+
+  if (!lead) {
+    throw new Error("リードが見つかりません。");
+  }
+
+  // AI DM生成（エラーハンドリング付き）
+  let generatedText = "";
+  let hasError = false;
+
+  try {
+    const pastLogs = lead.touchLogs.map(log => `[${log.type}] ${log.content}`);
+    generatedText = await generateSocialDm({
+      leadId: lead.id,
+      name: lead.name,
+      handle: lead.handle,
+      snsType: lead.snsType,
+      profileText: lead.profileText,
+      diagnosisType: lead.diagnosisType,
+      productName: lead.product?.name || null,
+      notes: lead.notes,
+      dmType: dmType as SocialDmType,
+      pastLogs,
+    });
+  } catch (e) {
+    console.error("DM生成エラー:", e);
+    hasError = true;
+  }
+
+  // リダイレクトで結果をページに返す（AI呼び出しはここで完了）
+  const params = new URLSearchParams();
+  params.set("dmType", dmType);
+  if (generatedText) params.set("generatedText", generatedText);
+  if (hasError) params.set("dmError", "1");
+  if (fromReportId) params.set("fromReportId", fromReportId);
+
+  redirect(`/social-leads/${socialLeadCandidateId}?${params.toString()}`);
+}
+
+// ============================================
+// TargetCompany 昇格
+// ============================================
+
 export async function promoteSocialLeadToTarget(formData: FormData) {
   const socialLeadCandidateId = formData.get("socialLeadCandidateId") as string;
   const companyName = formData.get("companyName") as string;
