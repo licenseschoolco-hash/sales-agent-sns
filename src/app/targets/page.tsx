@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import {
+  TARGET_STATUS_VALUES,
+  getTargetStatusMeta,
+} from "@/lib/constants/statuses";
 
 export default async function TargetListPage({ searchParams }: { searchParams: Promise<{ industry?: string; status?: string }> }) {
   const resolvedSearchParams = await searchParams;
@@ -19,18 +23,22 @@ export default async function TargetListPage({ searchParams }: { searchParams: P
     }
   });
 
-  // 全ステータスの定義
-  const statusDefinitions = [
-    { id: 'new', name: '新規リード', color: '#64748b' },
-    { id: 'researching', name: '調査中', color: '#94a3b8' },
-    { id: 'dm_ready', name: '準備完了', color: '#3b82f6' },
-    { id: 'contacted', name: 'アプローチ済', color: '#60a5fa' },
-    { id: 'replied', name: '返信あり', color: '#10b981' },
-    { id: 'appointment', name: 'アポ獲得', color: '#f59e0b' },
-    { id: 'won', name: '成約', color: '#059669' },
-    { id: 'lost', name: '失注', color: '#ef4444' },
-    { id: 'ng', name: 'NG', color: '#1e293b' },
-  ];
+  // 既存UIラベルとの差分を吸収するオーバーライド
+  // statuses.ts の正規ラベルと既存UIラベルが異なる箇所のみ定義
+  const labelOverrides: Record<string, string> = {
+    dm_ready: "準備完了",
+    contacted: "アプローチ済",
+  };
+
+  // 全ステータスの定義（statuses.ts から一元生成）
+  const statusDefinitions = TARGET_STATUS_VALUES.map((v) => {
+    const meta = getTargetStatusMeta(v);
+    return {
+      id: meta.value,
+      name: labelOverrides[meta.value] ?? meta.label,
+      color: meta.color,
+    };
+  });
 
   // ステータス別件数サマリーの取得 (フィルタ無しの全件)
   const statusCounts = await Promise.all(

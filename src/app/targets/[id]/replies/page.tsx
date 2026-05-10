@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { createReply, createAppointment } from "./actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  APPOINTMENT_OUTCOME_VALUES,
+  getAppointmentOutcomeMeta,
+} from "@/lib/constants/statuses";
 
 export default async function SalesProcessPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,14 +32,11 @@ export default async function SalesProcessPage({ params }: { params: Promise<{ i
     { id: 'no_reply', name: '返信なし' },
   ];
 
-  const outcomes = [
-    { id: 'pending', name: '商談待ち' },
-    { id: 'appointment_set', name: 'アポ獲得' },
-    { id: 'proposed', name: '提案済み' },
-    { id: 'won', name: '成約' },
-    { id: 'lost', name: '失注' },
-    { id: 'follow_up', name: '継続フォロー' },
-  ];
+  // 商談結果の定義（statuses.ts から一元生成）
+  const outcomes = APPOINTMENT_OUTCOME_VALUES.map((v) => {
+    const meta = getAppointmentOutcomeMeta(v);
+    return { id: meta.value, name: meta.label };
+  });
 
   async function handleReplySubmit(formData: FormData) {
     "use server";

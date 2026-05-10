@@ -3,32 +3,16 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
+import {
+  SOCIAL_LEAD_STATUS_VALUES,
+  TOUCH_LOG_TYPE_VALUES,
+} from "@/lib/constants/statuses";
 
-// 許可されたステータス一覧
-const ALLOWED_STATUSES = [
-  "NEW",
-  "FOLLOWED",
-  "LIKED",
-  "COMMENTED",
-  "DM_SENT",
-  "REPLIED",
-  "PDF_SENT",
-  "ZOOM_INVITED",
-  "ARCHIVED",
-];
+// 許可されたステータス一覧（statuses.ts で一元管理）
+const ALLOWED_STATUSES: readonly string[] = SOCIAL_LEAD_STATUS_VALUES;
 
-// 許可された接触種別
-const ALLOWED_TOUCH_TYPES = [
-  "LIKE",
-  "COMMENT",
-  "FOLLOW",
-  "DM_SENT",
-  "DM_RECEIVED",
-  "PDF_SENT",
-  "ZOOM_INVITED",
-  "REPLIED",
-  "NOTE",
-];
+// 許可された接触種別（statuses.ts で一元管理）
+const ALLOWED_TOUCH_TYPES: readonly string[] = TOUCH_LOG_TYPE_VALUES;
 
 export async function createSocialLeadCandidate(formData: FormData) {
   const snsType = formData.get("snsType") as string;
