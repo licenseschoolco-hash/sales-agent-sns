@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { updateTarget } from "../../actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  TARGET_STATUS_VALUES,
+  getTargetStatusMeta,
+} from "@/lib/constants/statuses";
 
 export default async function EditTargetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -76,15 +80,19 @@ export default async function EditTargetPage({ params }: { params: Promise<{ id:
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>ステータス</label>
             <select name="status" defaultValue={target.status} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'white' }}>
-              <option value="new">新規リード (new)</option>
-              <option value="researching">調査中 (researching)</option>
-              <option value="dm_ready">送信準備完了 (dm_ready)</option>
-              <option value="contacted">アプローチ済み (contacted)</option>
-              <option value="replied">返信あり (replied)</option>
-              <option value="appointment">アポ獲得 (appointment)</option>
-              <option value="won">成約 (won)</option>
-              <option value="lost">失注 (lost)</option>
-              <option value="ng">NG (ng)</option>
+              {TARGET_STATUS_VALUES.map((v) => {
+                const meta = getTargetStatusMeta(v);
+                const labelOverrides: Record<string, string> = {
+                  dm_ready: "送信準備完了",
+                  contacted: "アプローチ済み",
+                };
+                const label = labelOverrides[v] ?? meta.label;
+                return (
+                  <option key={v} value={v}>
+                    {label} ({v})
+                  </option>
+                );
+              })}
             </select>
           </div>
 

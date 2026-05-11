@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteTarget, updateTargetSalesStatus } from "../actions";
+import {
+  TARGET_STATUS_VALUES,
+  getTargetStatusMeta,
+} from "@/lib/constants/statuses";
 
 export default async function TargetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,17 +33,18 @@ export default async function TargetDetailPage({ params }: { params: Promise<{ i
   const deleteTargetWithId = deleteTarget.bind(null, id);
   const updateTargetSalesStatusWithId = updateTargetSalesStatus.bind(null, id);
 
-  const statuses: Record<string, string> = {
-    new: '新規リード',
-    researching: '調査中',
-    dm_ready: '送信準備完了',
-    contacted: 'アプローチ済み',
-    replied: '返信あり',
-    appointment: 'アポ獲得',
-    won: '成約',
-    lost: '失注',
-    ng: 'NG',
+  // 既存UIラベルとの差分を吸収するオーバーライド
+  const labelOverrides: Record<string, string> = {
+    dm_ready: "送信準備完了",
+    contacted: "アプローチ済み",
   };
+
+  // 表示用ステータスマップ（statuses.ts から生成）
+  const statuses: Record<string, string> = {};
+  TARGET_STATUS_VALUES.forEach((v) => {
+    const meta = getTargetStatusMeta(v);
+    statuses[v] = labelOverrides[v] ?? meta.label;
+  });
 
   const priorityColors: Record<string, string> = {
     S: '#ef4444',
