@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { calculateScore, ScoringInput } from "@/lib/scoring/engine";
+import { mapTargetStatusToOutcome } from "@/lib/constants/statuses";
 
 export async function createTarget(formData: FormData) {
   const name = formData.get("name") as string;
@@ -361,11 +362,8 @@ export async function updateTargetSalesStatus(targetCompanyId: string, formData:
   const scheduledAt = scheduledAtStr ? new Date(scheduledAtStr) : null;
   const amount = amountStr ? parseInt(amountStr, 10) : null;
 
-  // status に基づいて outcome を決定
-  let outcome = "pending";
-  if (status === "won") outcome = "won";
-  else if (status === "lost") outcome = "lost";
-  else if (status === "appointment") outcome = "appointment_set";
+  // status に基づいて outcome を決定 (statuses.ts で一元管理)
+  const outcome = mapTargetStatusToOutcome(status);
 
   // 1. TargetCompany のステータスを更新
   await prisma.targetCompany.update({
