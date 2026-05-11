@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { calculateScore, ScoringInput } from "@/lib/scoring/engine";
-import { mapTargetStatusToOutcome } from "@/lib/constants/statuses";
+import { mapTargetStatusToOutcome, TARGET_STATUS } from "@/lib/constants/statuses";
 
 export async function createTarget(formData: FormData) {
   const name = formData.get("name") as string;
@@ -108,7 +108,7 @@ export async function importTargetsFromCsv(csvText: string) {
         phone: columns[7] || "",
         email: columns[8] || "",
         notes: columns[9] || "",
-        status: "new",
+        status: TARGET_STATUS.NEW,
       },
     });
     count++;

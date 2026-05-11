@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { mapOutcomeToTargetStatus } from "@/lib/constants/statuses";
+import { mapOutcomeToTargetStatus, TARGET_STATUS } from "@/lib/constants/statuses";
 
 export async function createReply(data: {
   targetCompanyId: string;
@@ -28,7 +28,7 @@ export async function createReply(data: {
   // 企業のステータスを更新
   await prisma.targetCompany.update({
     where: { id: data.targetCompanyId },
-    data: { status: "replied" },
+    data: { status: TARGET_STATUS.REPLIED },
   });
 
   revalidatePath(`/targets/${data.targetCompanyId}/replies`);
