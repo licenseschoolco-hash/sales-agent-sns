@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
+import { APPOINTMENT_OUTCOME } from "@/lib/constants/statuses";
 
 export default async function SocialSalesDashboard({
   searchParams,
@@ -93,11 +94,11 @@ export default async function SocialSalesDashboard({
   });
 
   const appoCount = appointmentsInRange.filter(a => a.scheduledAt !== null).length;
-  const wonTargetIds = new Set(appointmentsInRange.filter(a => a.outcome === "won").map(a => a.targetCompanyId));
-  const lostTargetIds = new Set(appointmentsInRange.filter(a => a.outcome === "lost").map(a => a.targetCompanyId));
+  const wonTargetIds = new Set(appointmentsInRange.filter(a => a.outcome === APPOINTMENT_OUTCOME.WON).map(a => a.targetCompanyId));
+  const lostTargetIds = new Set(appointmentsInRange.filter(a => a.outcome === APPOINTMENT_OUTCOME.LOST).map(a => a.targetCompanyId));
   const wonCount = wonTargetIds.size;
   const lostCount = lostTargetIds.size;
-  const totalAmount = appointmentsInRange.filter(a => a.outcome === "won").reduce((sum, a) => sum + (a.amount || 0), 0);
+  const totalAmount = appointmentsInRange.filter(a => a.outcome === APPOINTMENT_OUTCOME.WON).reduce((sum, a) => sum + (a.amount || 0), 0);
   const avgAmount = wonCount > 0 ? totalAmount / wonCount : 0;
   
   const winRate = appoCount > 0 ? (wonCount / appoCount) * 100 : 0;
@@ -108,8 +109,8 @@ export default async function SocialSalesDashboard({
   const overdueApps = appointmentsInRange.filter(a => 
     a.nextFollowUpDate && 
     a.nextFollowUpDate < now && 
-    a.outcome !== "won" && 
-    a.outcome !== "lost" &&
+    a.outcome !== APPOINTMENT_OUTCOME.WON && 
+    a.outcome !== APPOINTMENT_OUTCOME.LOST &&
     !["won", "lost", "ng"].includes(a.targetCompany.status)
   );
 
@@ -309,8 +310,8 @@ export default async function SocialSalesDashboard({
                         fontWeight: "800", 
                         padding: "0.1rem 0.4rem", 
                         borderRadius: "4px",
-                        background: app.outcome === "won" ? "#dcfce7" : app.outcome === "lost" ? "#fee2e2" : "#f1f5f9",
-                        color: app.outcome === "won" ? "#166534" : app.outcome === "lost" ? "#991b1b" : "#475569"
+                        background: app.outcome === APPOINTMENT_OUTCOME.WON ? "#dcfce7" : app.outcome === APPOINTMENT_OUTCOME.LOST ? "#fee2e2" : "#f1f5f9",
+                        color: app.outcome === APPOINTMENT_OUTCOME.WON ? "#166534" : app.outcome === APPOINTMENT_OUTCOME.LOST ? "#991b1b" : "#475569"
                       }}>
                         {app.outcome.toUpperCase()}
                       </span>

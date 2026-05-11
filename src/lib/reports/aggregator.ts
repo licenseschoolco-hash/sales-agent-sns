@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { APPOINTMENT_OUTCOME } from "@/lib/constants/statuses";
 
 export async function getPipelineReports() {
   const products = await prisma.product.findMany();
@@ -10,9 +11,9 @@ export async function getPipelineReports() {
     const approvedDraftsCount = await prisma.dmDraft.count({ where: { productId: product.id, status: 'approved' } });
     const repliesCount = await prisma.reply.count({ where: { productId: product.id } });
     const appointmentsCount = await prisma.appointment.count({ where: { productId: product.id } });
-    const wonCount = await prisma.appointment.count({ where: { productId: product.id, outcome: 'won' } });
+    const wonCount = await prisma.appointment.count({ where: { productId: product.id, outcome: APPOINTMENT_OUTCOME.WON } });
     const salesAmount = await prisma.appointment.aggregate({
-      where: { productId: product.id, outcome: 'won' },
+      where: { productId: product.id, outcome: APPOINTMENT_OUTCOME.WON },
       _sum: { amount: true }
     });
 
@@ -75,7 +76,7 @@ export async function getPipelineReports() {
   // 4. 失注理由ランキング
   const lostReasons = await prisma.appointment.groupBy({
     by: ['lostReason'],
-    where: { outcome: 'lost', NOT: { lostReason: null } },
+    where: { outcome: APPOINTMENT_OUTCOME.LOST, NOT: { lostReason: null } },
     _count: { id: true },
     orderBy: { _count: { id: 'desc' } }
   });
