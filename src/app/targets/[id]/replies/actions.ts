@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { mapOutcomeToTargetStatus } from "@/lib/constants/statuses";
 
 export async function createReply(data: {
   targetCompanyId: string;
@@ -57,16 +58,12 @@ export async function createAppointment(data: {
     },
   });
 
-  // 企業のステータスを更新
-  if (data.outcome === "won") {
+  // 企業のステータスを更新 (statuses.ts のマッピングに基づいて連動)
+  const nextStatus = mapOutcomeToTargetStatus(data.outcome);
+  if (nextStatus) {
     await prisma.targetCompany.update({
       where: { id: data.targetCompanyId },
-      data: { status: "won" },
-    });
-  } else if (data.outcome === "appointment_set") {
-    await prisma.targetCompany.update({
-      where: { id: data.targetCompanyId },
-      data: { status: "appointment" },
+      data: { status: nextStatus },
     });
   }
 
