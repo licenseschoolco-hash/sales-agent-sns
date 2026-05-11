@@ -3,7 +3,7 @@ import { runAiDiagnosis, confirmAiReport } from "../../../actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import DiagnosisBarChart from "@/components/DiagnosisBarChart";
-import { DIAGNOSIS_CONFIG, getDiagnosisConfig } from "@/lib/recruitment-report/config";
+import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
 
 export default async function AiReportPage({ 
   params, 
@@ -33,7 +33,7 @@ export default async function AiReportPage({
 
   // 診断タイプの決定 (URLパラメータ優先、なければデフォルト)
   const currentDiagnosisType = diagnosisTypeParam || 'recruitment_video';
-  const currentConfig = getDiagnosisConfig(currentDiagnosisType);
+
 
   // SNSプロフィールの判定ロジック
   const isSnsProfile = (source: { label: string, sourceType: string }) => 

@@ -26,7 +26,7 @@ export default function ImportPage() {
       } else {
         setStatus({ loading: false, message: result.message || "インポートに失敗しました。", type: 'error' });
       }
-    } catch (_error) {
+    } catch {
       setStatus({ loading: false, message: "エラーが発生しました。", type: 'error' });
     }
   };

@@ -1,4 +1,4 @@
-import { DIAGNOSIS_CONFIG, getDiagnosisConfig, COMMON_EXPRESSION_GUARDS } from "../recruitment-report/config";
+import { getDiagnosisConfig, COMMON_EXPRESSION_GUARDS } from "../recruitment-report/config";
 
 export type SocialDmType = "INITIAL_CONTACT" | "FREE_DIAGNOSIS_OFFER" | "PDF_SEND" | "ZOOM_INVITE";
 

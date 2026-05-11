@@ -43,7 +43,7 @@ export default async function SocialSalesDashboard({
   const dmSentCount = getLogCount("DM_SENT");
   const pdfSentCount = getLogCount("PDF_SENT");
   const zoomInvitedCount = getLogCount("ZOOM_INVITED");
-  const repliedCount = getLogCount("DM_RECEIVED") + getLogCount("REPLIED");
+
 
   // 4. 分析用データ取得 (詳細ブレイクダウン)
   const allLeadsForBreakdown = await prisma.socialLeadCandidate.findMany({

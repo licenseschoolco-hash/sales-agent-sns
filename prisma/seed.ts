@@ -31,7 +31,7 @@ async function main() {
     },
   });
 
-  const aiPhone = await prisma.product.create({
+  await prisma.product.create({
     data: {
       name: "AI電話",
       slug: "ai-phone",
@@ -70,7 +70,7 @@ async function main() {
   ]);
 
   // --- ターゲットアカウント ---
-  const accounts = await Promise.all([
+  await Promise.all([
     prisma.targetAccount.create({
       data: { companyId: companies[0].id, platform: "X", accountId: "@sakura_care_tokyo", displayName: "さくら介護｜採用担当 田中", role: "採用担当", profileUrl: "https://x.com/sakura_care_tokyo", followersCount: 1200, bio: "介護業界で働く仲間を募集中！" },
     }),
