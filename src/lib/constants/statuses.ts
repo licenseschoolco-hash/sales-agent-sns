@@ -631,3 +631,28 @@ export function mapTargetStatusToOutcome(
       return APPOINTMENT_OUTCOME.PENDING;
   }
 }
+
+/**
+ * Appointment.outcome → TargetCompany.status の逆方向マッピング。
+ * replies/actions.ts の createAppointment 内で使用されている
+ * outcome に応じた TargetCompany.status の連動更新ロジックを関数化したもの。
+ *
+ * 戻り値が undefined の場合は TargetCompany.status を更新しない。
+ * これは既存挙動を維持するための設計判断：
+ *   - won: 成約確定のため TargetCompany.status を "won" に更新する
+ *   - appointment_set: 商談確定のため TargetCompany.status を "appointment" に更新する
+ *   - lost / proposed / follow_up / pending: 担当者の手動判断を優先し、連動更新しない
+ */
+export function mapOutcomeToTargetStatus(
+  outcome: string,
+): TargetStatusValue | undefined {
+  const normalized = normalizeAppointmentOutcome(outcome);
+  switch (normalized) {
+    case APPOINTMENT_OUTCOME.WON:
+      return TARGET_STATUS.WON;
+    case APPOINTMENT_OUTCOME.APPOINTMENT_SET:
+      return TARGET_STATUS.APPOINTMENT;
+    default:
+      return undefined;
+  }
+}
