@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { TARGET_STATUS } from "@/lib/constants/statuses";
 
 // プロモーション可能な種別
 const PROMOTABLE_TYPES = ['company', 'facility', 'clinic', 'professional', 'association'];
@@ -63,7 +64,7 @@ export async function promoteToTarget(candidateId: string) {
       industry: candidate.industry || "未分類",
       snsUrl: candidate.profileUrl,
       notes: candidate.bio,
-      status: "researching"
+      status: TARGET_STATUS.RESEARCHING
     }
   });
 

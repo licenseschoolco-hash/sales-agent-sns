@@ -6,6 +6,7 @@ import { DIAGNOSIS_CONFIG } from "@/lib/recruitment-report/config";
 import {
   SOCIAL_LEAD_STATUS_VALUES,
   TOUCH_LOG_TYPE_VALUES,
+  TARGET_STATUS,
 } from "@/lib/constants/statuses";
 
 // 許可されたステータス一覧（statuses.ts で一元管理）
@@ -229,7 +230,7 @@ export async function promoteSocialLeadToTarget(formData: FormData) {
           region: region || null,
           notes: notes || lead.notes || null,
           snsUrl: lead.url,
-          status: "new",
+          status: TARGET_STATUS.NEW,
           sourceStatus: "sns_only",
         },
       });
