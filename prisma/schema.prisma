@@ -45,6 +45,7 @@ model Product {
   searchQueries  ProductSearchQuery[]
   recruitmentReports RecruitmentReport[]
   socialLeads    SocialLeadCandidate[]
+  socialPosts    SocialPost[]
 
   @@map("products")
 }
@@ -497,4 +498,35 @@ model SocialTouchLog {
   createdAt             DateTime @default(now()) @map("created_at")
 
   @@map("social_touch_logs")
+}
+
+/// SNS投稿管理 - 営業資産としての投稿履歴を蓄積
+model SocialPost {
+  id              String   @id @default(cuid())
+  
+  // 商材との紐付け（商材削除時も投稿を残すため、Optional かつ SetNull に設定）
+  productId       String?  @map("product_id")
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  
+  // コンテンツ属性
+  category        String   // 課題提起, メリット紹介, 実績紹介, お知らせ, 募集
+  platform        String   // X, Facebook, LinkedIn, Other
+  
+  // 投稿内容
+  content         String   // 投稿本文
+  ctaLabel        String?  @map("cta_label") // 投稿ごとに調整可能なリンク用ラベル
+  ctaUrl          String?  @map("cta_url")   // 投稿ごとに調整可能な誘導先URL
+  
+  // 運用管理
+  status          String   @default("DRAFT") // DRAFT, APPROVED, POSTED, ARCHIVED
+  scheduledDate   DateTime? @map("scheduled_date") // 投稿予定日（目安）
+  postedAt        DateTime? @map("posted_at")     // 実際の投稿完了日時
+  
+  // 反応記録
+  engagementNote  String?  @map("engagement_note") // 手動メモ
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("social_posts")
 }
