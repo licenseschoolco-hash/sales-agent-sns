@@ -72,16 +72,17 @@ export default async function SocialPostsPage({
         </div>
 
         {/* フィルタ */}
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
-          <div>
+        <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 auto", minWidth: "250px" }}>
             <label style={{ fontSize: "0.75rem", fontWeight: "bold", display: "block", marginBottom: "0.25rem" }}>ステータス</label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <Link 
                 href="/social-posts" 
                 className="btn" 
                 style={{ 
                   padding: "0.25rem 0.75rem", 
                   fontSize: "0.875rem",
+                  whiteSpace: "nowrap",
                   backgroundColor: !resolvedParams.status ? "var(--primary-light)" : "white" 
                 }}
               >
@@ -97,6 +98,7 @@ export default async function SocialPostsPage({
                     style={{ 
                       padding: "0.25rem 0.75rem", 
                       fontSize: "0.875rem",
+                      whiteSpace: "nowrap",
                       backgroundColor: resolvedParams.status === s ? "var(--primary-light)" : "white" 
                     }}
                   >
@@ -107,15 +109,16 @@ export default async function SocialPostsPage({
             </div>
           </div>
           
-          <div>
+          <div style={{ flex: "1 1 auto", minWidth: "250px" }}>
             <label style={{ fontSize: "0.75rem", fontWeight: "bold", display: "block", marginBottom: "0.25rem" }}>プラットフォーム</label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <Link 
                 href="/social-posts" 
                 className="btn" 
                 style={{ 
                   padding: "0.25rem 0.75rem", 
                   fontSize: "0.875rem",
+                  whiteSpace: "nowrap",
                   backgroundColor: !resolvedParams.platform ? "var(--primary-light)" : "white" 
                 }}
               >
@@ -131,6 +134,7 @@ export default async function SocialPostsPage({
                     style={{ 
                       padding: "0.25rem 0.75rem", 
                       fontSize: "0.875rem",
+                      whiteSpace: "nowrap",
                       backgroundColor: resolvedParams.platform === p ? "var(--primary-light)" : "white" 
                     }}
                   >
