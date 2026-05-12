@@ -175,3 +175,58 @@ td {
 tr:hover {
   background-color: rgba(0, 0, 0, 0.02);
 }
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 1rem;
+    flex-direction: column; /* タイトルとナビを縦に並べる */
+    gap: 1rem;
+  }
+
+  .sidebar-title {
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+  .sidebar nav {
+    display: flex;
+    overflow-x: auto; /* ナビが多い場合に横スクロール可能に */
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-link {
+    white-space: nowrap; /* テキストの折り返しを防止 */
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0;
+    font-size: 0.825rem;
+  }
+
+  .icon {
+    margin-right: 0.25rem;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+    width: 100%;
+    overflow-x: hidden; /* メインコンテンツのはみ出し防止 */
+  }
+
+  .container {
+    padding: 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+}
