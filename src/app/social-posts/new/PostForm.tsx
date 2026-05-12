@@ -78,8 +78,71 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
     }
   };
 
+  // 商材参照パネルの共通表示
+  const renderProductReference = () => {
+    if (!selectedProduct) {
+      return (
+        <div style={{ color: "var(--muted)", textAlign: "center", padding: "2rem 0" }}>
+          まず商材を選択してください
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: "grid", gap: "1.5rem" }}>
+        <section>
+          <h3 style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "0.25rem" }}>商材名 / 概要</h3>
+          <p style={{ fontWeight: "bold" }}>{selectedProduct.name}</p>
+          <p style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>{selectedProduct.description}</p>
+        </section>
+
+        <section>
+          <h3 style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "0.25rem" }}>ターゲット / 価格</h3>
+          <p style={{ fontSize: "0.875rem" }}>業界: {selectedProduct.targetIndustry}</p>
+          <p style={{ fontSize: "0.875rem" }}>価格: {selectedProduct.priceRange}</p>
+        </section>
+
+        {selectedProduct.painPoints.length > 0 && (
+          <section>
+            <h3 style={{ fontSize: "0.875rem", color: "#b91c1c", marginBottom: "0.5rem" }}>解決する悩み (Pain Points)</h3>
+            <ul style={{ fontSize: "0.875rem", paddingLeft: "1.25rem", margin: 0 }}>
+              {selectedProduct.painPoints.map(p => <li key={p.id} style={{ marginBottom: "0.25rem" }}>{p.painPoint}</li>)}
+            </ul>
+          </section>
+        )}
+
+        {selectedProduct.valueProps.length > 0 && (
+          <section>
+            <h3 style={{ fontSize: "0.875rem", color: "#166534", marginBottom: "0.5rem" }}>独自の強み (Value Props)</h3>
+            <ul style={{ fontSize: "0.875rem", paddingLeft: "1.25rem", margin: 0 }}>
+              {selectedProduct.valueProps.map(v => <li key={v.id} style={{ marginBottom: "0.25rem" }}>{v.proposition}</li>)}
+            </ul>
+          </section>
+        )}
+
+        {selectedProduct.ngExpressions.length > 0 && (
+          <section style={{ backgroundColor: "#fef2f2", padding: "0.75rem", borderRadius: "4px", border: "1px solid #fee2e2" }}>
+            <h3 style={{ fontSize: "0.875rem", color: "#991b1b", marginBottom: "0.5rem" }}>⚠️ NG表現</h3>
+            <ul style={{ fontSize: "0.825rem", paddingLeft: "1.25rem", margin: 0, color: "#991b1b" }}>
+              {selectedProduct.ngExpressions.map(n => <li key={n.id} style={{ marginBottom: "0.25rem" }}>{n.phrase}</li>)}
+            </ul>
+          </section>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem", alignItems: "start" }}>
+      <style>{`
+        .reference-desktop { display: block; }
+        .reference-mobile { display: none; }
+        @media (max-width: 768px) {
+          .reference-desktop { display: none !important; }
+          .reference-mobile { display: block !important; margin-top: 1rem; }
+        }
+      `}</style>
+
       {/* 左側: 投稿フォーム */}
       <section style={{ flex: "1 1 600px", minWidth: "0" }}>
         <div style={{ marginBottom: "1.5rem" }}>
@@ -109,6 +172,12 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
+
+              {/* スマホ用参照パネル (商材選択欄の直下) */}
+              <div className="reference-mobile" style={{ borderLeft: "4px solid var(--primary)", paddingLeft: "1rem", backgroundColor: "var(--bg-main)", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                <h4 style={{ fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.75rem" }}>商材参照 (スマホ版)</h4>
+                {renderProductReference()}
+              </div>
             </div>
 
             <div>
@@ -230,58 +299,12 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
         </form>
       </section>
 
-      {/* 右側: 商材参照パネル */}
-      <aside className="card" style={{ flex: "1 1 300px", maxWidth: "400px", minWidth: "0", padding: "1.5rem", position: "sticky", top: "1rem" }}>
+      {/* 右側: 商材参照パネル (PC用) */}
+      <aside className="card reference-desktop" style={{ flex: "1 1 300px", maxWidth: "400px", minWidth: "0", padding: "1.5rem", position: "sticky", top: "1rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "1rem", borderBottom: "2px solid var(--primary)", paddingBottom: "0.5rem" }}>
           商材カンニングペーパー
         </h2>
-        
-        {!selectedProduct ? (
-          <div style={{ color: "var(--muted)", textAlign: "center", padding: "2rem 0" }}>
-            まず商材を選択してください
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: "1.5rem" }}>
-            <section>
-              <h3 style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "0.25rem" }}>商材名 / 概要</h3>
-              <p style={{ fontWeight: "bold" }}>{selectedProduct.name}</p>
-              <p style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>{selectedProduct.description}</p>
-            </section>
-
-            <section>
-              <h3 style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "0.25rem" }}>ターゲット / 価格</h3>
-              <p style={{ fontSize: "0.875rem" }}>業界: {selectedProduct.targetIndustry}</p>
-              <p style={{ fontSize: "0.875rem" }}>価格: {selectedProduct.priceRange}</p>
-            </section>
-
-            {selectedProduct.painPoints.length > 0 && (
-              <section>
-                <h3 style={{ fontSize: "0.875rem", color: "#b91c1c", marginBottom: "0.5rem" }}>解決する悩み (Pain Points)</h3>
-                <ul style={{ fontSize: "0.875rem", paddingLeft: "1.25rem", margin: 0 }}>
-                  {selectedProduct.painPoints.map(p => <li key={p.id} style={{ marginBottom: "0.25rem" }}>{p.painPoint}</li>)}
-                </ul>
-              </section>
-            )}
-
-            {selectedProduct.valueProps.length > 0 && (
-              <section>
-                <h3 style={{ fontSize: "0.875rem", color: "#166534", marginBottom: "0.5rem" }}>独自の強み (Value Props)</h3>
-                <ul style={{ fontSize: "0.875rem", paddingLeft: "1.25rem", margin: 0 }}>
-                  {selectedProduct.valueProps.map(v => <li key={v.id} style={{ marginBottom: "0.25rem" }}>{v.proposition}</li>)}
-                </ul>
-              </section>
-            )}
-
-            {selectedProduct.ngExpressions.length > 0 && (
-              <section style={{ backgroundColor: "#fef2f2", padding: "0.75rem", borderRadius: "4px", border: "1px solid #fee2e2" }}>
-                <h3 style={{ fontSize: "0.875rem", color: "#991b1b", marginBottom: "0.5rem" }}>⚠️ NG表現</h3>
-                <ul style={{ fontSize: "0.825rem", paddingLeft: "1.25rem", margin: 0, color: "#991b1b" }}>
-                  {selectedProduct.ngExpressions.map(n => <li key={n.id} style={{ marginBottom: "0.25rem" }}>{n.phrase}</li>)}
-                </ul>
-              </section>
-            )}
-          </div>
-        )}
+        {renderProductReference()}
       </aside>
     </div>
   );
