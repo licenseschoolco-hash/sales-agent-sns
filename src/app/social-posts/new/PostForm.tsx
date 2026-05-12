@@ -174,7 +174,7 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
               </select>
 
               {/* スマホ用参照パネル (商材選択欄の直下) */}
-              <div className="reference-mobile" style={{ borderLeft: "4px solid var(--primary)", paddingLeft: "1rem", backgroundColor: "var(--bg-main)", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
+              <div className="card reference-mobile" style={{ marginTop: "1rem", borderLeft: "4px solid var(--primary)" }}>
                 <h4 style={{ fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.75rem" }}>商材参照 (スマホ版)</h4>
                 {renderProductReference()}
               </div>
