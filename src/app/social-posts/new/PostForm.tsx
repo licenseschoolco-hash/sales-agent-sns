@@ -47,6 +47,7 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
   // 商材選択時の挙動
   const handleProductChange = (productId: string) => {
     const product = products.find((p) => p.id === productId);
+    
     setSelectedProduct(product || null);
     setFormData(prev => ({ ...prev, productId }));
 
