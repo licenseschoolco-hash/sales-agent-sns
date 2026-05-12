@@ -79,9 +79,9 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: "2rem", alignItems: "start" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem", alignItems: "start" }}>
       {/* 左側: 投稿フォーム */}
-      <section>
+      <section style={{ flex: "1 1 600px", minWidth: "0" }}>
         <div style={{ marginBottom: "1.5rem" }}>
           <Link href="/social-posts" style={{ fontSize: "0.875rem", color: "var(--muted)" }}>← 一覧へ戻る</Link>
           <h1 style={{ marginTop: "0.5rem" }}>新規投稿案の作成</h1>
@@ -94,7 +94,7 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginBottom: "1.5rem" }}>
             <div>
               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>商材 *</label>
               <select 
@@ -127,7 +127,7 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginBottom: "1.5rem" }}>
             <div>
               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>プラットフォーム *</label>
               <select 
@@ -182,7 +182,7 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem", marginBottom: "1.5rem" }}>
             <div>
               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>CTAラベル</label>
               <input 
@@ -231,7 +231,7 @@ export default function PostForm({ products }: { products: ProductWithDetails[] 
       </section>
 
       {/* 右側: 商材参照パネル */}
-      <aside className="card" style={{ padding: "1.5rem", position: "sticky", top: "1rem" }}>
+      <aside className="card" style={{ flex: "1 1 300px", maxWidth: "400px", minWidth: "0", padding: "1.5rem", position: "sticky", top: "1rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "1rem", borderBottom: "2px solid var(--primary)", paddingBottom: "0.5rem" }}>
           商材カンニングペーパー
         </h2>

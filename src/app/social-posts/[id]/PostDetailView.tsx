@@ -90,10 +90,10 @@ export default function PostDetailView({ post }: PostDetailViewProps) {
   const isArchived = post.status === POST_STATUS.ARCHIVED;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: "2rem", alignItems: "start" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem", alignItems: "start" }}>
       {/* 左側: 投稿詳細 */}
-      <section>
-        <div style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+      <section style={{ flex: "1 1 600px", minWidth: "0" }}>
+        <div style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <Link href="/social-posts" style={{ fontSize: "0.875rem", color: "var(--muted)" }}>← 一覧へ戻る</Link>
             <h1 style={{ marginTop: "0.5rem" }}>投稿案の詳細</h1>
@@ -121,7 +121,7 @@ export default function PostDetailView({ post }: PostDetailViewProps) {
 
         <div className="card" style={{ padding: "2rem", marginBottom: "2rem" }}>
           {/* ヘッダー情報 */}
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem", borderBottom: "1px solid var(--border)", paddingBottom: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1.5rem", marginBottom: "2rem", borderBottom: "1px solid var(--border)", paddingBottom: "1.5rem" }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block" }}>ステータス</label>
               <span style={{ 
@@ -173,7 +173,7 @@ export default function PostDetailView({ post }: PostDetailViewProps) {
           </div>
 
           {/* CTA情報 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
             <div className="card" style={{ padding: "1rem", backgroundColor: "#f8fafc" }}>
               <label style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block" }}>CTAラベル</label>
               <div style={{ fontWeight: "bold", marginTop: "0.25rem" }}>{post.ctaLabel || "未設定"}</div>
@@ -239,7 +239,7 @@ export default function PostDetailView({ post }: PostDetailViewProps) {
       </section>
 
       {/* 右側: 商材参照パネル */}
-      <aside className="card" style={{ padding: "1.5rem", position: "sticky", top: "1rem" }}>
+      <aside className="card" style={{ flex: "1 1 300px", maxWidth: "400px", minWidth: "0", padding: "1.5rem", position: "sticky", top: "1rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "1rem", borderBottom: "2px solid var(--primary)", paddingBottom: "0.5rem" }}>
           商材カンニングペーパー
         </h2>
